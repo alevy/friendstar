@@ -66,11 +66,12 @@ mkHttpServer port mctx = do
 runHttpServer :: Net.PortNumber
               -> [HttpRoute IO ()]
               -> IO ()
-runHttpServer srv routing = forever $ do
-  server <- mkHttpServer 8000 Nothing
-  (addr, iter, enum) <- httpAccept server
-  _ <- forkIO $ simpleServer iter enum routing
-  return ()
+runHttpServer port routing = do
+  server <- mkHttpServer port Nothing
+  forever $ do
+    (addr, iter, enum) <- httpAccept server
+    _ <- forkIO $ simpleServer iter enum routing
+    return ()
 
 simpleServer :: Iter L.ByteString IO ()  -- Output to web browser
             -> Onum L.ByteString IO ()  -- Input from web browser

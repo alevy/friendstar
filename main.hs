@@ -17,4 +17,3 @@ apps = [("home", routeFn app1)]
 app1 req = do
   let t = newSTMP "Hello $name$\r\n"
   return $ mkHtmlResp stat200 $ L.pack $ render $ setAttribute "name" (reqPath req) t
-
