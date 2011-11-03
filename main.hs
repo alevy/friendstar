@@ -2,6 +2,7 @@ import RoutedServer
 import qualified Data.ByteString.Lazy.Char8 as L
 import Text.StringTemplate
 
+import System.IO
 
 main :: IO ()
 main = do
@@ -11,9 +12,11 @@ routing = [ routeTop $ routeConst $ resp301 "/home",
                     routeMap apps
                   , routeFileSys mimeMap (dirRedir "/index.html") "public"
                   ]
-apps = [("home", routeFn app1)]
+apps = [("profile", routeVar $ routeFn profileController)]
 
---app1 :: (Monad m) => HttpReq s -> Iter L.ByteString m (HttpResp m)
-app1 req = do
-  let t = newSTMP "Hello $name$\r\n"
-  return $ mkHtmlResp stat200 $ L.pack $ render $ setAttribute "name" (reqPath req) t
+profileController req = do
+  let profileId = (head $ reqPathParams req)
+  let template = getTemplate "views/profile.html"
+  let view = render $ setAttribute "id" name $
+          newSTMP template
+  return $ mkHtmlResp stat200 $ view

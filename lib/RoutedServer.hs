@@ -4,17 +4,19 @@
 module RoutedServer (mkHttpServer,
                      runHttpServer,
                      mimeMap,
+                     getTemplate,
                      module Data.IterIO.Http,
                      module Data.IterIO.HttpRoute) where
 
 import Prelude hiding (catch, head, id, div)
-import Data.Monoid
+import Control.Applicative ((<$>))
 import Control.Monad
 import Control.Concurrent
 import Control.Exception
 import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S8
 import qualified Data.ByteString.Lazy as L
+import Data.Monoid
 import qualified Network.Socket as Net
 import qualified OpenSSL.Session as SSL
 import System.IO
@@ -50,7 +52,7 @@ httpAccept hs = do
     mkInsecure s = do
       h <- Net.socketToHandle s ReadWriteMode
       hSetBuffering h NoBuffering
-      return (handleI h, enumHandle h `inumFinally` liftIO (hClose h))
+      return (handleI h, enumHandle h)-- `inumFinally` liftIO (hClose h))
     mkSecure s ctx = iterSSL ctx s True `catch` \e@(SomeException _) -> do
                        hPutStrLn stderr (show e)
                        Net.sClose s
@@ -90,3 +92,12 @@ mimeMap = unsafePerformIO $ do
        findMimeTypes (h:t) = do exist <- fileExist h
                                 if exist then return h else findMimeTypes t
        findMimeTypes []    = return "mime.types" -- cause error
+
+--- Tentative
+sanitizePath :: FilePath -> FilePath
+sanitizePath path = path -- TODO!!
+
+getTemplate :: FilePath -> String
+getTemplate path = unsafePerformIO $ do
+    file <- openFile (sanitizePath path) ReadMode
+    hGetContents file
