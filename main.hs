@@ -17,6 +17,6 @@ apps = [("profile", routeVar $ routeFn profileController)]
 profileController req = do
   let profileId = (head $ reqPathParams req)
   let template = getTemplate "views/profile.html"
-  let view = render $ setAttribute "id" name $
+  let view = render $ setAttribute "id" profileId $
           newSTMP template
   return $ mkHtmlResp stat200 $ view
