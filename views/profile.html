@@ -5,9 +5,16 @@
 	<title>FriendStar</title>
 </head>
 <body>
-  <h1>Welcome to FriendStar $id$!</h1>
-  <p>
-    Content forthcoming...
-  </p>
+  <h1>$profile.firstName$ $profile.lastName$</h1>
+  <div id="details">
+    Current City: $profile.currentCity$
+  </div>
+  <div id="posts">
+    <h2>Wall</h2>
+    <ol>
+       $profile.posts:{ post |
+       <li>$post.postText$</li>}$
+    </ol>
+  </div>
 </body>
 </html>
