@@ -5,6 +5,7 @@ module RoutedServer (mkHttpServer,
                      runHttpServer,
                      mimeMap,
                      getTemplate,
+                     RestController, restIndex, restShow, restEdit, routeRestController,
                      module Data.IterIO.Http,
                      module Data.IterIO.HttpRoute) where
 
@@ -24,6 +25,7 @@ import System.IO.Unsafe
 import System.Posix
 
 import Data.IterIO
+import Data.IterIO.Iter
 import Data.IterIO.Http
 import Data.IterIO.HttpRoute
 import Data.IterIO.SSL
@@ -101,3 +103,30 @@ getTemplate :: FilePath -> String
 getTemplate path = unsafePerformIO $ do
     file <- openFile (sanitizePath path) ReadMode
     hGetContents file
+
+routeRestController :: RestController a => a -> HttpRoute IO s
+routeRestController controller = mconcat $ [routeTop $ routeMethod "GET" $ routeFn (restIndex controller),
+                                            routeMethod "GET" $ routeName "new" $ routeVar $ routeFn (restNew controller),
+                                            routeMethod "GET" $ routeName "edit" $ routeVar $ routeFn (restEdit controller),
+                                            routeMethod "GET" $ routeVar $ routeFn (restShow controller),
+                                            routeTop $ routeMethod "POST" $ routeFn (restCreate controller),
+                                            routeMethod "POST" $ routeVar $ routeFn (restUpdate controller)]
+
+class RestController a where
+  restIndex :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restIndex _ req = return $ resp404 req
+
+  restShow :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restShow _ req = return $ resp404 req
+  
+  restEdit :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restEdit _ req = return $ resp404 req
+  
+  restNew :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restNew _ req = return $ resp404 req
+  
+  restCreate :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restCreate _ req = return $ resp404 req
+  
+  restUpdate :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restUpdate _ req = return $ resp404 req

@@ -16,24 +16,30 @@ main = do
   runHttpServer 8000 routing
 
 routing = [ routeTop $ routeConst $ resp301 "/home",
-                    routeMap apps
-                  , routeFileSys mimeMap (dirRedir "/index.html") "public"
+                    routeName "profiles" $ routeRestController (ProfilesController 1),
+                    routeFileSys mimeMap (dirRedir "/index.html") "public"
                   ]
-apps = [("edit", routeVar $ routeFn editProfileController),
-        ("profiles", routeVar $ routeFn profileController)]
 
-editProfileController req = do
-  let profileId = (head $ reqPathParams req)
-  profile <- lift $ run $ findProfile (read $ S.unpack profileId)
-  let template = getTemplate "views/edit.html"
-  let view = render $ setAttribute "profile" profile $
-          newSTMP template
-  return $ mkHtmlResp stat200 $ view
+data ProfilesController = ProfilesController Integer
 
-profileController req = do
-  let profileId = (head $ reqPathParams req)
-  profile <- lift $ run $ findProfile (read $ S.unpack profileId)
-  let template = getTemplate "views/profile.html"
-  let view = render $ setAttribute "profile" profile $
+instance RestController ProfilesController where
+  restIndex self req = do
+    let template = getTemplate "views/profiles/index.html"
+    let view = render $ newSTMP template
+    return $ mkHtmlResp stat200 $ view
+  
+  restShow self req = do
+    let profileId = (head $ reqPathParams req)
+    profile <- lift $ run $ findProfile (read $ S.unpack profileId)
+    let template = getTemplate "views/profile.html"
+    let view = render $ setAttribute "profile" profile $
           newSTMP template
-  return $ mkHtmlResp stat200 $ view
+    return $ mkHtmlResp stat200 $ view
+
+  restEdit self req = do
+    let profileId = (head $ reqPathParams req)
+    profile <- lift $ run $ findProfile (read $ S.unpack profileId)
+    let template = getTemplate "views/edit.html"
+    let view = render $ setAttribute "profile" profile $
+          newSTMP template
+    return $ mkHtmlResp stat200 $ view
