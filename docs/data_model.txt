@@ -1,0 +1,20 @@
+Profile
+=======
+
+{
+  _id: "...",
+  first_name: "john",
+  middle_name: "p",
+  last_name: "doe",
+  current_city: "San Bernadino, CA",
+  posts: [
+    {},
+  ]
+  friends : [
+    ids...
+  ],
+  incoming_friend_requests: [
+    ids...
+  ]
+}
+
