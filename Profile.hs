@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+module Profile where
+
 import Control.Monad.Trans
 import Data.Bson
 import Data.Time.Clock
 import Database.MongoDB
 
-import System.IO.Unsafe
-
 data FSPost = FSPost {
-  postAuthor :: FSProfile,
+  postAuthorId :: ObjectId,
   postTimestamp :: UTCTime,
   postText :: UString
 } deriving (Show)
@@ -47,7 +47,7 @@ documentToProfile doc = defaultFSProfile {
 
 documentToPost :: Document -> FSPost
 documentToPost doc = FSPost {
---  postAuthor = unsafePerformIO $ findProfile $ at "author_id" doc,
+  postAuthorId = at "author_id" doc,
   postTimestamp = at "timestamp" doc,
   postText = at "text" doc
 }
