@@ -14,13 +14,13 @@ import Data.Typeable
 import Data.Maybe
 import Database.MongoDB
 
-newtype FSObjectId = FSObjectId S.ByteString deriving (Show, Eq, Data, Typeable)
+type FSObjectId = S.ByteString
 
 fromObjectId :: ObjectId -> FSObjectId
-fromObjectId id = FSObjectId $ S.pack $ show id
+fromObjectId id = S.pack $ show id
 
 toObjectId :: FSObjectId -> ObjectId
-toObjectId (FSObjectId id) = read $ S.unpack id
+toObjectId id = read $ S.unpack id
 
 data FSPost = FSPost {
   postAuthorId :: FSObjectId,
