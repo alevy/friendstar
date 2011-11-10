@@ -5,7 +5,7 @@ module RoutedServer (mkHttpServer,
                      runHttpServer,
                      mimeMap,
                      getTemplate,
-                     RestController, restIndex, restShow, restEdit, routeRestController,
+                     RestController, restIndex, restShow, restEdit, restCreate, restUpdate, routeRestController,
                      module Data.IterIO.Http,
                      module Data.IterIO.HttpRoute) where
 
