@@ -49,7 +49,10 @@ instance RestController ProfilesController where
     return $ mkHtmlResp stat200 $ view
 
   restUpdate self req = do
-    let profileId = seq (putStrLn (show $ reqContentType req)) (head $ reqPathParams req)
+    lift $ putStrLn "Update request\n"
+    -- XXX: Doing something wrong with the monads
+    --lift $ putStrLn (show $ withParm "profile.firstName" req)
+    let profileId = (head $ reqPathParams req)
     profile <- lift $ run $ findProfile (read $ S.unpack profileId)
     let template = getTemplate "views/profile.html"
     let view = render $ setAttribute "profile" profile $
@@ -57,34 +60,11 @@ instance RestController ProfilesController where
     return $ mkHtmlResp stat200 $ view
 
 type L = L.ByteString
-type S = S.ByteString
-type Parms = [(FormField, L, Int)]
-
-parmsI :: (Monad m) => HttpReq () -> Iter L m Parms
-parmsI req = foldForm req getPart []
- where
-  getPart parts mp = do
-    front <- takeI 50
-    backLen <- countI
-    return ((mp,front,backLen):parts)
 
 withParm :: (MonadIO m) => String -> HttpReq ()
          -> Iter L m a -> Iter L m (Maybe a)
 withParm pName req iter = foldForm req handlePart Nothing
- where
-  handlePart result part =
-    if ffName part == S.pack pName
-      then Just <$> iter
-      else nullI >> return result
-
-countI :: (Monad m, ChunkData t, LL.ListLike t e) =>
-          Iter t m Int
-countI = more 0
- where
-  more n = do
-    eof <- atEOFI
-    if eof
-      then return n
-      else do buf <- dataI
-              more (n + LL.length buf)
+  where handlePart result part = if ffName part == S.pack pName
+				    then Just <$> iter
+				    else nullI >> return result
 
