@@ -5,24 +5,27 @@ module RoutedServer (mkHttpServer,
                      runHttpServer,
                      mimeMap,
                      getTemplate,
+                     paramMap,
                      RestController, restIndex, restShow, restEdit, restCreate, restUpdate, routeRestController,
                      module Data.IterIO.Http,
                      module Data.IterIO.HttpRoute) where
 
-import Prelude hiding (catch, head, id, div)
+import Prelude hiding (catch, id, div)
 import Control.Applicative ((<$>))
 import Control.Monad
 import Control.Concurrent
 import Control.Exception
 import Control.Monad.Trans
-import qualified Data.ByteString.Char8 as S8
+import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy as L
+import Data.Map
 import Data.Monoid
 import qualified Network.Socket as Net
 import qualified OpenSSL.Session as SSL
 import System.IO
 import System.IO.Unsafe
 import System.Posix
+import Text.Regex
 
 import Data.IterIO
 import Data.IterIO.Iter
@@ -84,7 +87,7 @@ simpleServer :: MonadIO m => Iter L.ByteString m ()  -- Output to web browser
 simpleServer iter enum routes = enum |$ inumHttpServer server .| iter
    where server = ioHttpServer $ runHttpRoute $ mconcat routes
 
-mimeMap :: String -> S8.ByteString
+mimeMap :: String -> S.ByteString
 mimeMap = unsafePerformIO $ do
      path <- findMimeTypes ["conf/mime.types"
                            , "/etc/mime.types"
@@ -103,6 +106,13 @@ getTemplate :: FilePath -> String
 getTemplate path = unsafePerformIO $ do
     file <- openFile (sanitizePath path) ReadMode
     hGetContents file
+
+paramMap :: MonadIO m => String -> HttpReq s -> Iter L.ByteString m (Map String L.ByteString)
+paramMap objName req = foldForm req handlePart empty
+  where handlePart accm field = do
+          val <- pureI
+          return $ maybe (accm) (\x -> insert (head x) val accm) (matchRegex rg $ S.unpack $ ffName field)
+        rg = mkRegex $ objName ++ "\\[([^]]+)\\]"
 
 routeRestController :: RestController a => a -> HttpRoute IO s
 routeRestController controller = mconcat $ [routeTop $ routeMethod "GET" $ routeFn (restIndex controller),

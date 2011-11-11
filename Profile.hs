@@ -9,12 +9,15 @@ import Control.Applicative
 import Control.Monad.Trans
 import Data.Bson
 import qualified Data.ByteString.Char8 as S
+import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Data
+import Data.Map
 import qualified Data.Text as T
 import Data.Time.Clock
 import Data.Typeable
 import Data.Maybe
 import Database.MongoDB
+import Text.Regex
 
 type FSObjectId = S.ByteString
 
@@ -47,6 +50,13 @@ defaultFSProfile = FSProfile {
   currentCity = Nothing, friends = [], incomingFriendRequests = [], posts = []
 }
 
+profileFromMap :: Map String L.ByteString -> FSProfile
+profileFromMap map = defaultFSProfile {
+  firstName = L.unpack $ map Data.Map.! "first_name",
+  lastName = L.unpack $ map Data.Map.! "last_name",
+  currentCity = fmap L.unpack $ "current_city" `Data.Map.lookup` map
+}
+
 instance Val FSProfile where
   val profile = Doc [ "_id" =: (fmap toObjectId $ profileId profile),
                   "first_name" =: firstName profile,
@@ -61,9 +71,9 @@ instance Val FSProfile where
   cast' (Doc doc) = Just defaultFSProfile {
     profileId = fmap fromObjectId $ at "_id" doc,
     firstName = at "first_name" doc,
-    middleName = lookup "middle_name" doc,
+    middleName = Data.Bson.lookup "middle_name" doc,
     lastName = at "last_name" doc,
-    currentCity = lookup "current_city" doc,
+    currentCity = Data.Bson.lookup "current_city" doc,
     friends = fmap fromObjectId $ atOrDefault "friends" doc [],
     incomingFriendRequests = fmap fromObjectId $ atOrDefault "incoming_friend_requests" doc [],
     posts = fmap toPost $ atOrDefault "posts" doc []}
@@ -95,7 +105,7 @@ saveProfile profile
       save "profiles" $ doc
       return profile
   | otherwise = do
-      ObjId objId <- insert "profiles" $ exclude ["_id"] doc
+      ObjId objId <- Database.MongoDB.insert "profiles" $ exclude ["_id"] doc
       return profile { profileId = Just $ fromObjectId objId }
   where (Doc doc) = val profile
 
