@@ -77,10 +77,10 @@ runHttpServer port routing = do
     _ <- forkIO $ simpleServer iter enum routing
     return ()
 
-simpleServer :: Iter L.ByteString IO ()  -- Output to web browser
-            -> Onum L.ByteString IO ()  -- Input from web browser
-            -> [HttpRoute IO ()]
-            -> IO ()
+simpleServer :: MonadIO m => Iter L.ByteString m ()  -- Output to web browser
+            -> Onum L.ByteString m ()  -- Input from web browser
+            -> [HttpRoute m ()]
+            -> m ()
 simpleServer iter enum routes = enum |$ inumHttpServer server .| iter
    where server = ioHttpServer $ runHttpRoute $ mconcat routes
 
@@ -113,20 +113,20 @@ routeRestController controller = mconcat $ [routeTop $ routeMethod "GET" $ route
                                             routeMethod "POST" $ routeVar $ routeFn (restUpdate controller)]
 
 class RestController a where
-  restIndex :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restIndex :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
   restIndex _ req = return $ resp404 req
 
-  restShow :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restShow :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
   restShow _ req = return $ resp404 req
   
-  restEdit :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restEdit :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
   restEdit _ req = return $ resp404 req
   
-  restNew :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restNew :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
   restNew _ req = return $ resp404 req
   
-  restCreate :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restCreate :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
   restCreate _ req = return $ resp404 req
   
-  restUpdate :: (MonadTrans t, Monad (t IO), Monad m) => a -> HttpReq s -> t IO (HttpResp m)
+  restUpdate :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
   restUpdate _ req = return $ resp404 req

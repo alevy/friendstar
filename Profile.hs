@@ -3,6 +3,8 @@
 
 module Profile where
 
+import Prelude hiding (lookup)
+
 import Control.Applicative
 import Control.Monad.Trans
 import Data.Bson
@@ -31,9 +33,9 @@ data FSPost = FSPost {
 data FSProfile = FSProfile {
   profileId :: Maybe FSObjectId,
   firstName :: String,
-  middleName :: String,
+  middleName :: Maybe String,
   lastName :: String,
-  currentCity :: String,
+  currentCity :: Maybe String,
   friends :: [FSObjectId],
   incomingFriendRequests :: [FSObjectId],
   posts :: [FSPost]
@@ -41,8 +43,8 @@ data FSProfile = FSProfile {
 
 defaultFSProfile :: FSProfile
 defaultFSProfile = FSProfile {
-  profileId = Nothing, firstName = "", middleName = "", lastName = "",
-  currentCity = "", friends = [], incomingFriendRequests = [], posts = []
+  profileId = Nothing, firstName = "", middleName = Nothing, lastName = "",
+  currentCity = Nothing, friends = [], incomingFriendRequests = [], posts = []
 }
 
 instance Val FSProfile where
@@ -59,9 +61,9 @@ instance Val FSProfile where
   cast' (Doc doc) = Just defaultFSProfile {
     profileId = fmap fromObjectId $ at "_id" doc,
     firstName = at "first_name" doc,
-    middleName = atOrDefault "middle_name" doc "",
+    middleName = lookup "middle_name" doc,
     lastName = at "last_name" doc,
-    currentCity = atOrDefault "current_city" doc "",
+    currentCity = lookup "current_city" doc,
     friends = fmap fromObjectId $ atOrDefault "friends" doc [],
     incomingFriendRequests = fmap fromObjectId $ atOrDefault "incoming_friend_requests" doc [],
     posts = fmap toPost $ atOrDefault "posts" doc []}

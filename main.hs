@@ -4,6 +4,8 @@ import Control.Applicative ((<$>))
 import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
+import Data.Map
+import Text.Regex
 import Text.StringTemplate
 import Text.StringTemplate.GenericStandard
 
@@ -31,10 +33,10 @@ instance RestController ProfilesController where
     let template = getTemplate "views/profiles/index.html"
     let view = render $ newSTMP template
     return $ mkHtmlResp stat200 $ view
-  
+
   restShow self req = do
     let profileId = (head $ reqPathParams req)
-    profile <- lift $ run $ findProfile (read $ S.unpack profileId)
+    profile <- liftIO $ run $ findProfile (read $ S.unpack profileId)
     let template = getTemplate "views/profile.html"
     let view = render $ setAttribute "profile" profile $
           newSTMP template
@@ -42,18 +44,19 @@ instance RestController ProfilesController where
 
   restEdit self req = do
     let profileId = (head $ reqPathParams req)
-    profile <- lift $ run $ findProfile (read $ S.unpack profileId)
+    profile <- liftIO $ run $ findProfile (read $ S.unpack profileId)
     let template = getTemplate "views/edit.html"
     let view = render $ setAttribute "profile" profile $
           newSTMP template
     return $ mkHtmlResp stat200 $ view
 
   restUpdate self req = do
-    lift $ putStrLn "Update request\n"
-    -- XXX: Doing something wrong with the monads
-    --lift $ putStrLn (show $ withParm "profile.firstName" req)
-    let profileId = (head $ reqPathParams req)
-    profile <- lift $ run $ findProfile (read $ S.unpack profileId)
+    p <- paramMap "profile" req
+    let profileId = head $ reqPathParams req
+    let profileId = read $ S.unpack profileId
+    let profile = (profileFromMap p) { profileId = Just profileId }
+--    liftIO $ run $ saveProfile profile
+    liftIO $ putStrLn $ (show profile)
     let template = getTemplate "views/profile.html"
     let view = render $ setAttribute "profile" profile $
           newSTMP template
@@ -61,10 +64,17 @@ instance RestController ProfilesController where
 
 type L = L.ByteString
 
-withParm :: (MonadIO m) => String -> HttpReq ()
-         -> Iter L m a -> Iter L m (Maybe a)
-withParm pName req iter = foldForm req handlePart Nothing
-  where handlePart result part = if ffName part == S.pack pName
-				    then Just <$> iter
-				    else nullI >> return result
+profileFromMap :: Map String L -> FSProfile
+profileFromMap map = defaultFSProfile {
+  firstName = L.unpack $ map ! "first_name",
+  lastName = L.unpack $ map ! "last_name",
+  currentCity = fmap L.unpack $ "current_city" `Data.Map.lookup` map
+}
+
+paramMap :: MonadIO m => String -> HttpReq s -> Iter L m (Map String L)
+paramMap objName req = foldForm req handlePart empty
+  where handlePart accm field = do
+          val <- pureI
+          return $ maybe (accm) (\x -> insert (head x) val accm) (matchRegex rg $ S.unpack $ ffName field)
+        rg = mkRegex $ objName ++ "\\[([^]]+)\\]"
 
