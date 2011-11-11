@@ -53,14 +53,9 @@ instance RestController ProfilesController where
   restUpdate self req = do
     p <- paramMap "profile" req
     let profileId = head $ reqPathParams req
-    let profileId = read $ S.unpack profileId
-    let profile = (profileFromMap p) { profileId = Just profileId }
---    liftIO $ run $ saveProfile profile
-    liftIO $ putStrLn $ (show profile)
-    let template = getTemplate "views/profile.html"
-    let view = render $ setAttribute "profile" profile $
-          newSTMP template
-    return $ mkHtmlResp stat200 $ view
+    let profile = (profileFromMap p) { profileId = Just $ profileId }
+    liftIO $ run $ saveProfile profile
+    return $ resp301 ("/profiles/" ++ S.unpack profileId)
 
 type L = L.ByteString
 
