@@ -95,7 +95,7 @@ saveProfile profile
       save "profiles" $ doc
       return profile
   | otherwise = do
-      ObjId objId <- insert "profiles" $ doc
+      ObjId objId <- insert "profiles" $ exclude ["_id"] doc
       return profile { profileId = Just $ fromObjectId objId }
   where (Doc doc) = val profile
 
