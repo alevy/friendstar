@@ -3,6 +3,7 @@ Profile
 
 {
   _id: "...",
+  username: "john",
   first_name: "john",
   middle_name: "p",
   last_name: "doe",

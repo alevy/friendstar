@@ -15,7 +15,7 @@ main :: IO ()
 main = do
   runHttpServer 8000 routing
 
-routing = [ routeTop $ routeConst $ resp301 "/home",
+routing = [ routeTop $ routeConst $ resp301 "/index.html",
                     routeName "session" $ routeRestController (SessionController),
                     routeName "post" $ routeRestController (PostController),
                     routeName "profiles" $ routeRestController (ProfilesController),

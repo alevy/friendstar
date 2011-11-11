@@ -35,6 +35,7 @@ data FSPost = FSPost {
 
 data FSProfile = FSProfile {
   profileId :: Maybe FSObjectId,
+  username :: String,
   firstName :: String,
   middleName :: Maybe String,
   lastName :: String,
@@ -46,30 +47,33 @@ data FSProfile = FSProfile {
 
 defaultFSProfile :: FSProfile
 defaultFSProfile = FSProfile {
-  profileId = Nothing, firstName = "", middleName = Nothing, lastName = "",
-  currentCity = Nothing, friends = [], incomingFriendRequests = [], posts = []
+  profileId = Nothing, username = "", firstName = "", middleName = Nothing,
+  lastName = "", currentCity = Nothing, friends = [],
+  incomingFriendRequests = [], posts = []
 }
 
 profileFromMap :: Map String L.ByteString -> FSProfile
 profileFromMap map = defaultFSProfile {
   firstName = L.unpack $ map Data.Map.! "first_name",
+  middleName = fmap L.unpack $ "middle_name" `Data.Map.lookup` map,
   lastName = L.unpack $ map Data.Map.! "last_name",
   currentCity = fmap L.unpack $ "current_city" `Data.Map.lookup` map
 }
 
 instance Val FSProfile where
   val profile = Doc [ "_id" =: (fmap toObjectId $ profileId profile),
+		  "username" =: username profile,
                   "first_name" =: firstName profile,
                   "middle_name" =: middleName profile,
                   "last_name" =: lastName profile,
                   "current_city" =: currentCity profile,
-                  "friends" =: (fmap toObjectId $ friends profile),
                   "friends" =: (fmap toObjectId $ friends profile),
                   "incoming_friend_requests" =: (fmap toObjectId $ incomingFriendRequests profile),
                   "posts" =: posts profile]
 
   cast' (Doc doc) = Just defaultFSProfile {
     profileId = fmap fromObjectId $ at "_id" doc,
+    username = at "username" doc,
     firstName = at "first_name" doc,
     middleName = Data.Bson.lookup "middle_name" doc,
     lastName = at "last_name" doc,

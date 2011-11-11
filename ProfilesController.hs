@@ -25,7 +25,7 @@ instance RestController ProfilesController where
     return $ mkHtmlResp stat200 $ view
 
   restEdit self req = do
-    let profileId = (head $ reqPathParams req)
+    let profileId = head $ reqPathParams req
     profile <- liftIO $ run $ findProfile (read $ S.unpack profileId)
     let template = getTemplate "views/edit.html"
     let view = render $ setAttribute "profile" profile $
@@ -44,6 +44,7 @@ instance RestController ProfilesController where
   restUpdate self req = do
     p <- paramMap "profile" req
     let profileId = head $ reqPathParams req
-    let profile = (profileFromMap p) { profileId = Just $ profileId }
+    currentProfile <- liftIO $ run $ findProfile (read $ S.unpack profileId)
+    let profile = (profileFromMap p) { profileId = Just $ profileId, username = username currentProfile }
     liftIO $ run $ saveProfile profile
     return $ resp301 ("/profiles/" ++ S.unpack profileId)
