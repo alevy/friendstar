@@ -50,6 +50,15 @@ instance RestController ProfilesController where
           newSTMP template
     return $ mkHtmlResp stat200 $ view
 
+  restCreate self req = do
+    p <- paramMap "profile" req
+    let profile = profileFromMap p
+    prof <- liftIO $ run $ saveProfile profile
+    let template = getTemplate "views/thankyou.html"
+    let view = render $ setAttribute "profile" prof $
+          newSTMP template
+    return $ mkHtmlResp stat200 $ view
+
   restUpdate self req = do
     p <- paramMap "profile" req
     let profileId = head $ reqPathParams req

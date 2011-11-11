@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>FriendStar Registration</title>
+	<link rel="stylesheet" type="text/css" href="/style.css"/>
+</head>
+<body>
+  <h1>FriendStar Registration</h1>
+  <form action="/profiles/" method="POST" id="edit_profile_form">
+    <p>
+      <label for="profile_first_name">First Name:</label><br/>
+      <input type="text" name="profile[first_name]" id="profile_first_name"/>
+    </p>
+    <p>
+      <label for="profile_middle_name">Middle Name: (optional)</label><br/>
+      <input type="text" name="profile[middle_name]" id="profile_middle_name"/>
+    </p>
+    <p>
+    <p>
+      <label for="profile_last_name">Last Name:</label><br/>
+      <input type="text" name="profile[last_name]" id="profile_last_name"/>
+    </p>
+      <label for="profile_current_city">Current City:</label><br/>
+      <input type="text" name="profile[current_city]" 
+      id="profile_current_city"/>
+      </p>
+    <p><input type="submit" value="Create Profile"/></p>
+  </form>
+</body>
+</html>
