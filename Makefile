@@ -7,4 +7,5 @@ Profile.o: Profile.hs
 	ghc -ilib Profile.hs
 
 clean:
-	rm *.o *.hi main
+	rm -f *.o *.hi lib/*.o lib/*.hi main
+
