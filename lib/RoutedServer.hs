@@ -6,7 +6,7 @@ module RoutedServer (mkHttpServer,
                      mimeMap,
                      getTemplate,
                      paramMap,
-                     RestController, restIndex, restShow, restEdit, restCreate, restUpdate, routeRestController,
+                     RestController, restIndex, restShow, restEdit, restNew, restCreate, restUpdate, restDestroy, routeRestController,
                      module Data.IterIO.Http,
                      module Data.IterIO.HttpRoute) where
 
@@ -118,6 +118,7 @@ routeRestController :: RestController a => a -> HttpRoute IO s
 routeRestController controller = mconcat $ [routeTop $ routeMethod "GET" $ routeFn (restIndex controller),
                                             routeMethod "GET" $ routeName "new" $ routeVar $ routeFn (restNew controller),
                                             routeMethod "GET" $ routeName "edit" $ routeVar $ routeFn (restEdit controller),
+                                            routeMethod "POST" $ routeName "destroy" $ routeVar $ routeFn (restDestroy controller),
                                             routeMethod "GET" $ routeVar $ routeFn (restShow controller),
                                             routeTop $ routeMethod "POST" $ routeFn (restCreate controller),
                                             routeMethod "POST" $ routeVar $ routeFn (restUpdate controller)]
@@ -140,3 +141,7 @@ class RestController a where
   
   restUpdate :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
   restUpdate _ req = return $ resp404 req
+
+  restDestroy :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
+  restDestroy _ req = return $ resp404 req
+
