@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module ProfilesController where
 
 import Control.Monad.Trans
@@ -17,15 +18,15 @@ instance RestController ProfilesController where
     where context _ = MuNothing
 
   restShow self req = do
-    let profileId = (head $ reqPathParams req)
-    profile <- liftIO $ run $ findProfile (read $ S.unpack profileId)
+    let username = (head $ reqPathParams req)
+    profile <- liftIO $ run $ findProfileByUsername username
     view <- hastacheFile defaultConfig "views/profiles/show.html" $
                     mkGenericContext profile
     return $ mkHtmlResp stat200 $ view
 
   restEdit self req = do
-    let profileId = head $ reqPathParams req
-    profile <- liftIO $ run $ findProfile (read $ S.unpack profileId)
+    let username = head $ reqPathParams req
+    profile <- liftIO $ run $ findProfileByUsername username
     view <- hastacheFile defaultConfig "views/profiles/edit.html" $
                     mkGenericContext profile
     return $ mkHtmlResp stat200 $ view
@@ -40,8 +41,10 @@ instance RestController ProfilesController where
 
   restUpdate self req = do
     p <- paramMap "profile" req
-    let profileId = head $ reqPathParams req
-    currentProfile <- liftIO $ run $ findProfile (read $ S.unpack profileId)
-    let profile = (profileFromMap p) { profileId = Just $ profileId, username = username currentProfile }
+    let user = head $ reqPathParams req
+    currentProfile <- liftIO $ run $ findProfileByUsername user
+    let profile = (profileFromMap p)
+                    { profileId = profileId currentProfile,
+                      username = username currentProfile }
     liftIO $ run $ saveProfile profile
-    return $ resp301 ("/profiles/" ++ S.unpack profileId)
+    return $ resp301 ("/profiles/" ++ S.unpack user)

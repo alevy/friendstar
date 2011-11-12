@@ -6,9 +6,9 @@
 	<link rel="stylesheet" type="text/css" href="/style.css"/>
 </head>
 <body>
-  <h1>$profile.firstName$ $profile.lastName$</h1>
+  <h1>{{firstName}} {{lastName}}</h1>
   Welcome to FriendStar you can now add friends and see your profile page.
 
-  <a href="/profiles/$profile.profileId$">See your profile page.</a>
+  <a href="/profiles/{{username}}">See your profile page.</a>
 </body>
 </html>

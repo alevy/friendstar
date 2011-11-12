@@ -54,6 +54,7 @@ defaultFSProfile = FSProfile {
 
 profileFromMap :: Map String L.ByteString -> FSProfile
 profileFromMap map = defaultFSProfile {
+  username = L.unpack $ map Data.Map.! "username",
   firstName = L.unpack $ map Data.Map.! "first_name",
   middleName = fmap L.unpack $ "middle_name" `Data.Map.lookup` map,
   lastName = L.unpack $ map Data.Map.! "last_name",
@@ -97,9 +98,19 @@ instance Val FSPost where
     postTimestamp = at "timestamp" doc,
     postText = T.pack $ at "text" doc}
 
-findProfile :: MonadIO m => ObjectId -> Action m FSProfile
+findProfile :: MonadIO m => FSObjectId -> Action m FSProfile
 findProfile id = do
-  dbProfile <- fetch (select ["_id" =: id] "profiles")
+  let objId = toObjectId id
+  findProfileBy "_id" objId
+
+findProfileByUsername :: MonadIO m => S.ByteString -> Action m FSProfile
+findProfileByUsername username = do
+  let strUsername = S.unpack username
+  findProfileBy "username" strUsername
+
+findProfileBy :: (MonadIO m, Val v) => Label -> v -> Action m FSProfile
+findProfileBy key value = do
+  dbProfile <- fetch (select [key =: value] "profiles")
   let (Just profile) = cast' (Doc dbProfile)
   return profile
 
@@ -109,8 +120,8 @@ saveProfile profile
       save "profiles" $ doc
       return profile
   | otherwise = do
-      ObjId objId <- Database.MongoDB.insert "profiles" $ exclude ["_id"] doc
-      return profile { profileId = Just $ fromObjectId objId }
+      Database.MongoDB.save "profiles" $ exclude ["_id"] doc
+      return profile
   where (Doc doc) = val profile
 
 
