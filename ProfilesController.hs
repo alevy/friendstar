@@ -4,7 +4,6 @@ import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
 import Text.Hastache
 import Text.Hastache.Context
-import Text.StringTemplate
 
 import Profile
 import RoutedServer
@@ -13,21 +12,21 @@ data ProfilesController = ProfilesController
 
 instance RestController ProfilesController where
   restIndex self req = do
-    let template = getTemplate "views/profiles/index.html"
-    let view = render $ newSTMP template
+    view <- hastacheFile defaultConfig "views/profiles/index.html" context
     return $ mkHtmlResp stat200 $ view
+    where context _ = MuNothing
 
   restShow self req = do
     let profileId = (head $ reqPathParams req)
     profile <- liftIO $ run $ findProfile (read $ S.unpack profileId)
-    view <- hastacheFile defaultConfig "views/profile.html" $
+    view <- hastacheFile defaultConfig "views/profiles/show.html" $
                     mkGenericContext profile
     return $ mkHtmlResp stat200 $ view
 
   restEdit self req = do
     let profileId = head $ reqPathParams req
     profile <- liftIO $ run $ findProfile (read $ S.unpack profileId)
-    view <- hastacheFile defaultConfig "views/edit.html" $
+    view <- hastacheFile defaultConfig "views/profiles/edit.html" $
                     mkGenericContext profile
     return $ mkHtmlResp stat200 $ view
 

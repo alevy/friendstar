@@ -1,10 +1,7 @@
 all: main
 
-main: main.hs Profile.o
+main: 
 	ghc -ilib main.hs
-
-Profile.o: Profile.hs
-	ghc -ilib Profile.hs
 
 clean:
 	rm -f *.o *.hi lib/*.o lib/*.hi main
