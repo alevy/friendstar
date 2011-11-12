@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes #-}
 -- Module:      Text.Hastache.Context
 -- Copyright:   Sergey S Lymar (c) 2011 
 -- License:     BSD3
@@ -194,6 +195,8 @@ procField =
     `extQ` (\(i::Text.Text)         -> MuVariable i ~> TSimple)
     `extQ` (\(i::LText.Text)        -> MuVariable i ~> TSimple)
     `extQ` (\(i::Bool)              -> MuBool i ~> TSimple)
+    `extQ` (\(i::(Maybe String)) -> MuVariable i ~> TSimple)
+    `extQ` (\(i::(Maybe BS.ByteString)) -> MuVariable i ~> TSimple)
     
     `extQ` muLambdaBSBS
     `extQ` muLambdaSS

@@ -129,6 +129,10 @@ instance MuVar a => MuVar [a] where
 
 instance MuVar [Char] where
     toLByteString k = k ~> encodeStr ~> toLBS
+
+instance MuVar a => MuVar (Maybe a) where
+    toLByteString Nothing = toLByteString "helloworld"
+    toLByteString (Just a) = toLByteString a
     
 data MuType m = 
     forall a. MuVar a => MuVariable a                   |

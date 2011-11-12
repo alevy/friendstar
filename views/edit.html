@@ -6,24 +6,24 @@
 	<link rel="stylesheet" type="text/css" href="/style.css"/>
 </head>
 <body>
-  <h1>$profile.firstName$ $profile.lastName$</h1>
-  <form action="/profiles/$profile.profileId$" method="POST" 
+  <h1>{{firstName}} {{lastName}}</h1>
+  <form action="/profiles/{{profileId}}" method="POST" 
       id="edit_profile_form">
     <p>
       <label for="profile_first_name">First Name:</label><br/>
-      <input type="text" name="profile[first_name]" id="profile_first_name" value="$profile.firstName$"/>
+      <input type="text" name="profile[first_name]" id="profile_first_name" value="{{firstName}}"/>
     </p>
     <p>
       <label for="profile_middle_name">Middle Name: (optional)</label><br/>
-      <input type="text" name="profile[middle_name]" id="profile_middle_name" value="$profile.middleName$"/>
+      <input type="text" name="profile[middle_name]" id="profile_middle_name" value="{{middleName}}"/>
     </p>
     <p>
     <p>
       <label for="profile_last_name">Last Name:</label><br/>
-      <input type="text" name="profile[last_name]" id="profile_last_name" value="$profile.lastName$"/>
+      <input type="text" name="profile[last_name]" id="profile_last_name" value="{{lastName}}"/>
     </p>
       <label for="profile_current_city">Current City:</label><br/>
-      <input type="text" name="profile[current_city]" id="profile_current_city" value="$profile.currentCity$"/>
+      <input type="text" name="profile[current_city]" id="profile_current_city" value="{{currentCity}}"/>
     </p>
     <p><input type="submit" value="Update Profile"/></p>
   </form>
