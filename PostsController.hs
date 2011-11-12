@@ -1,4 +1,4 @@
-module PostController where
+module PostsController where
 
 import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S

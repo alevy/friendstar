@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>FriendStar</title>
+	<link rel="stylesheet" type="text/css" href="/style.css"/>
+</head>
+<body>
+  <h1>Login:</h1>
+  <form action="/sessions" method="POST"  id="login_form">
+    <p>
+      <label for="session_username">Username:</label><br/>
+      <input type="text" name="session[username]" id="session_username" value="{{username}}"/>
+    </p>
+    <p><input type="submit" value="Login"/></p>
+  </form>
+</body>
+</html>

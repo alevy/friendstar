@@ -7,17 +7,17 @@ import qualified Data.ListLike as LL
 
 import RoutedServer
 
-import SessionController
+import SessionsController
 import ProfilesController
-import PostController
+import PostsController
 
 main :: IO ()
 main = do
   runHttpServer 8000 routing
 
 routing = [ routeTop $ routeConst $ resp301 "/index.html",
-                    routeName "session" $ routeRestController (SessionController),
-                    routeName "post" $ routeRestController (PostController),
+                    routeName "sessions" $ routeRestController (SessionsController),
+                    routeName "posts" $ routeRestController (PostController),
                     routeName "profiles" $ routeRestController (ProfilesController),
                     routeFileSys mimeMap (dirRedir "/index.html") "public"
                   ]
