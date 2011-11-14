@@ -118,7 +118,7 @@ routeRestController :: RestController a => a -> HttpRoute IO s
 routeRestController controller = mconcat $ [routeTop $ routeMethod "GET" $ routeFn (restIndex controller),
                                             routeMethod "GET" $ routeName "new" $ routeFn (restNew controller),
                                             routeMethod "GET" $ routeName "edit" $ routeVar $ routeFn (restEdit controller),
-                                            routeMethod "POST" $ routeName "destroy" $ routeVar $ routeFn (restDestroy controller),
+                                            routeMethod "POST" $ routeName "destroy" $ routeFn (restDestroy controller),
                                             routeMethod "GET" $ routeVar $ routeFn (restShow controller),
                                             routeTop $ routeMethod "POST" $ routeFn (restCreate controller),
                                             routeMethod "POST" $ routeVar $ routeFn (restUpdate controller)]

@@ -3,6 +3,7 @@ module ProfilesController where
 
 import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
+import qualified Data.ByteString.Lazy.Char8 as L
 import Text.Hastache
 import Text.Hastache.Context
 
@@ -14,7 +15,7 @@ data ProfilesController = ProfilesController
 instance RestController ProfilesController where
   restIndex self req = do
     view <- hastacheFile defaultConfig "views/profiles/index.html" context
-    return $ mkHtmlResp stat200 $ view
+    return $ mkHtmlResp stat200 $ L.pack $ (show $ reqHeaders req) ++ "<br/><br/>" ++ (show $ reqHost req)
     where context _ = MuNothing
 
   restShow self req = do
