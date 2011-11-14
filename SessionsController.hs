@@ -14,9 +14,13 @@ import Profile
 
 data SessionsController = SessionsController
 
-cookieFromString str = liftIO $ fmap S.unpack $ encryptIO key str
-  where (Right key) = initKey $ S.pack "9d3583564c8965d36e5f75c5cb8b1323373545cc0fe98aab170d2a155a93c16e6b6d4703c216a8e99691a09ed25cd440"
+cookieKey = key
+  where (Right key) = initKey $
+    S.pack "9d3583564c8965d36e5f75c5cb8b1323373545cc0fe98aab170d2a155a93c16e6b6d4703c216a8e99691a09ed25cd440"
 
+
+cookieFromString str = liftIO $ fmap S.unpack $ encryptIO key str
+  where (Right key) = cookieKey
 instance RestController SessionsController where
   -- Renders the login page
   restNew self req = do

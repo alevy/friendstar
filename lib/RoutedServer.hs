@@ -145,3 +145,5 @@ class RestController a where
   restDestroy :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
   restDestroy _ req = return $ resp404 req
 
+usernameFromSession :: HttpReq s -> S.ByteString
+usernameFromSession req = foldl' (\(k, v) accm -> if k == "_sess" then v else accm) reqCookies req
