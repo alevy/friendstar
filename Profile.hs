@@ -98,6 +98,10 @@ instance Val FSPost where
     postTimestamp = at "timestamp" doc,
     postText = T.pack $ at "text" doc}
 
+{-
+ - Profile Operations
+ -}
+
 findProfile :: MonadIO m => FSObjectId -> Action m FSProfile
 findProfile id = do
   let objId = toObjectId id
@@ -120,10 +124,25 @@ saveProfile profile
       save "profiles" $ doc
       return profile
   | otherwise = do
-      Database.MongoDB.save "profiles" $ exclude ["_id"] doc
+      save "profiles" $ exclude ["_id"] doc
       return profile
   where (Doc doc) = val profile
 
+{-
+ - Posts Operations
+ -}
+
+-- Post a FSPost to a profile
+postToProfile :: (MonadIO m, Applicative m) => FSPost -> FSObjectId -> Action m FSPost
+postToProfile post profileId = do
+  modify (select ["_id" =: objId] "profiles") ["$push" =: ["posts" =: post_doc]]
+  return post
+  where (Doc post_doc) = val post
+        objId = toObjectId profileId
+
+{-
+ - Friend List Manipulation
+ -}
 
 run act = do
   pipe <- runIOE $ connect $ host "127.0.0.1"
