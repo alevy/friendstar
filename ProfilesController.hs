@@ -15,7 +15,7 @@ data ProfilesController = ProfilesController
 instance RestController ProfilesController where
   restIndex self req = do
     view <- hastacheFile defaultConfig "views/profiles/index.html" context
-    return $ mkHtmlResp stat200 $ L.pack $ (show $ reqHeaders req) ++ "<br/><br/>" ++ (show $ reqHost req)
+    return $ mkHtmlResp stat200 $ L.pack $ (show $ reqHeaders req) ++ "<br/><br/>" ++ (show $ usernameFromSession req)
     where context _ = MuNothing
 
   restShow self req = do

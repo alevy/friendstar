@@ -14,9 +14,8 @@ import Profile
 
 data SessionsController = SessionsController
 
-cookieKey = key
-  where (Right key) = initKey $
-    S.pack "9d3583564c8965d36e5f75c5cb8b1323373545cc0fe98aab170d2a155a93c16e6b6d4703c216a8e99691a09ed25cd440"
+cookieKey = initKey $
+            S.pack "9d3583564c8965d36e5f75c5cb8b1323373545cc0fe98aab170d2a155a93c16e6b6d4703c216a8e99691a09ed25cd440"
 
 
 cookieFromString str = liftIO $ fmap S.unpack $ encryptIO key str
@@ -31,7 +30,8 @@ instance RestController SessionsController where
   restCreate self req = do
     params <- paramMap "session" req
     let username = S.pack $ L.unpack $ params ! "username"
-    cookie <- cookieFromString username
+    -- TODO: INSECURE!!! For now just store username because ClientSession leaves a trailing `=' which is invalid.
+    let cookie = S.unpack username
     let cookieHeader = S.pack $ "Set-Cookie: _sess=" ++ cookie ++ "; path=/;"
     let resp = resp301 "/"
     return $ resp { respHeaders = cookieHeader:(respHeaders resp)}

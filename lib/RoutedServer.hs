@@ -6,6 +6,7 @@ module RoutedServer (mkHttpServer,
                      mimeMap,
                      getTemplate,
                      paramMap,
+                     usernameFromSession,
                      RestController, restIndex, restShow, restEdit, restNew, restCreate, restUpdate, restDestroy, routeRestController,
                      module Data.IterIO.Http,
                      module Data.IterIO.HttpRoute) where
@@ -145,5 +146,6 @@ class RestController a where
   restDestroy :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
   restDestroy _ req = return $ resp404 req
 
-usernameFromSession :: HttpReq s -> S.ByteString
-usernameFromSession req = foldl' (\(k, v) accm -> if k == "_sess" then v else accm) reqCookies req
+
+usernameFromSession :: HttpReq s -> Maybe S.ByteString
+usernameFromSession req = foldl (\accm (k, v) -> if k == "_sess" then Just v else accm) Nothing $ reqCookies req
