@@ -8,6 +8,7 @@ import Prelude hiding (lookup)
 import Control.Applicative
 import Control.Monad.Trans
 import Data.Bson
+import Data.Bool
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Data
@@ -98,6 +99,10 @@ instance Val FSPost where
     postTimestamp = at "timestamp" doc,
     postText = T.pack $ at "text" doc}
 
+{-
+ - Profile Operations
+ -}
+
 findProfile :: MonadIO m => FSObjectId -> Action m FSProfile
 findProfile id = do
   let objId = toObjectId id
@@ -120,10 +125,48 @@ saveProfile profile
       save "profiles" $ doc
       return profile
   | otherwise = do
-      Database.MongoDB.save "profiles" $ exclude ["_id"] doc
+      save "profiles" $ exclude ["_id"] doc
       return profile
   where (Doc doc) = val profile
 
+{-
+ - Posts Operations
+ -}
+
+-- Post a FSPost to a profile
+postToProfile :: (MonadIO m, Applicative m) => FSPost -> FSObjectId -> Action m FSPost
+postToProfile post profileId = do
+  modify (select ["_id" =: objId] "profiles") ["$push" =: ["posts" =: post_doc]]
+  return post
+  where (Doc post_doc) = val post
+        objId = toObjectId profileId
+
+{-
+ - Friend List Manipulation
+ -}
+
+-- Add friend request to the specified user profile
+requestFriendship :: (MonadIO m, Applicative m) => FSObjectId -> FSObjectId -> Action m FSObjectId
+requestFriendship fromUser toUser = do
+  modify (select ["_id" =: toId] "profiles") ["$push" =: ["incoming_friend_requests" =: fromId]]
+  return fromUser
+  where fromId = toObjectId fromUser
+        toId = toObjectId toUser
+
+-- Test if a friend request already exists
+friendshipRequestExists :: (MonadIO m) => FSProfile -> FSProfile -> m Bool
+friendshipRequestExists myProfile friendProfile
+  | isJust myProfileId = do
+    return $ elem (fromJust myProfileId) friendRequests
+  | otherwise = do
+    return False
+    -- Need force this to error out in a rational way but this is a safe bet.
+  where friendRequests = incomingFriendRequests friendProfile
+        myProfileId = profileId myProfile
+
+-- Retrieve the friend requests
+
+-- Accept a friend request
 
 run act = do
   pipe <- runIOE $ connect $ host "127.0.0.1"
