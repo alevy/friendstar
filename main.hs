@@ -5,6 +5,7 @@ import Data.IterIO
 import Data.IterIO.Http
 import qualified Data.ListLike as LL
 
+import RestController
 import RoutedServer
 
 import SessionsController

@@ -6,8 +6,6 @@ module RoutedServer (mkHttpServer,
                      mimeMap,
                      getTemplate,
                      paramMap,
-                     usernameFromSession,
-                     RestController, restIndex, restShow, restEdit, restNew, restCreate, restUpdate, restDestroy, routeRestController,
                      module Data.IterIO.Http,
                      module Data.IterIO.HttpRoute) where
 
@@ -115,65 +113,3 @@ paramMap objName req = foldForm req handlePart empty
           return $ maybe (accm) (\x -> insert (head x) val accm) (matchRegex rg $ S.unpack $ ffName field)
         rg = mkRegex $ objName ++ "\\[([^]]+)\\]"
 
-routeRestController :: RestController a => a -> HttpRoute IO s
-routeRestController controller = mconcat routes
-  where routes = [routeTop $ routeMethod "GET" $ routeFn (_restNoVar controller restIndex),
-                  routeMethod "GET" $ routeName "new" $ routeFn (_restNoVar controller restNew),
-                  routeMethod "GET" $ routeName "edit" $ routeVar $ routeFn (restEdit controller),
-                  routeMethod "POST" $ routeName "destroy" $ routeFn (restDestroy controller),
-                  routeMethod "GET" $ routeVar $ routeFn (restShow controller),
-                  routeTop $ routeMethod "POST" $ routeFn (restCreate controller),
-                  routeMethod "POST" $ routeVar $ routeFn (restUpdate controller)]
-
-data RestControllerContainer a = RestControllerContainer a
-                                | RestControllerIOWrapper (IO a)
-                                | RestControllerReqWrapper (HttpReq a -> a)
-
-instance Monad RestControllerContainer where
-  return x = RestControllerContainer x
-  (RestControllerContainer x) >>= k = k x
-
-instance MonadIO RestControllerContainer where
-  liftIO m = RestControllerIOWrapper  m
-
-class RestController a where
-  restIndex :: (Monad m) => a -> RestControllerContainer (HttpResp m)
-  restIndex _ = return $ resp301 "/"
-
-  restShow :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
-  restShow _ req = return $ resp404 req
-
-  restEdit :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
-  restEdit _ req = return $ resp404 req
-
-  restNew :: (Monad m) => a -> RestControllerContainer (HttpResp m)
-  restNew _ = return $ resp301 "/"
-
-  restCreate :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
-  restCreate _ req = return $ resp404 req
-
-  restUpdate :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
-  restUpdate _ req = return $ resp404 req
-
-  restDestroy :: (MonadIO t, Monad m) => a -> HttpReq s -> Iter L t (HttpResp m)
-  restDestroy _ req = return $ resp404 req
-
-  _restNoVar :: (MonadIO t, Monad m) => a
-                -> (a -> RestControllerContainer (HttpResp m))
-                -> HttpReq s
-                -> Iter L t (HttpResp m)
-  _restNoVar self handler req = do
-    let (RestControllerContainer resp) = handler self
-    return resp
-
-  _restWithVar :: (MonadIO t, Monad m) => a
-                -> (a -> S.ByteString -> RestControllerContainer (HttpResp m))
-                -> HttpReq s
-                -> Iter L t (HttpResp m)
-  _restWithVar self handler req = do
-    let arg = head $ reqPathParams req
-    let (RestControllerContainer resp) = handler self arg
-    return resp
-
-usernameFromSession :: RestControllerContainer (Maybe S.ByteString)
-usernameFromSession = RestControllerReqWrapper (\x -> foldl (\accm (k, v) -> if k == "_sess" then Just v else accm) Nothing $ reqCookies x)

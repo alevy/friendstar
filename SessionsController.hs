@@ -5,10 +5,12 @@ import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Map
+import qualified Data.IterIO.Iter as I
 import Text.Hastache
 import Text.Hastache.Context
 import Web.ClientSession
 
+import RestController
 import RoutedServer
 import Profile
 
@@ -23,21 +25,18 @@ cookieFromString str = liftIO $ fmap S.unpack $ encryptIO key str
 instance RestController SessionsController where
   -- Renders the login page
   restNew self = do
-    view <- hastacheFile defaultConfig "views/sessions/new.html" $ (\x -> MuNothing)
-    return $ mkHtmlResp stat200 $ view
+    renderTemplate "views/sessions/new.html" $ (\x -> MuNothing)
 
   -- Creates the authentication token and redirects to the user profile page.
-  restCreate self req = do
-    params <- paramMap "session" req
+  restCreate self = do
+    req <- getHttpReq
+    params <- I.run $ paramMap "session" req
     let username = S.pack $ L.unpack $ params ! "username"
     -- TODO: INSECURE!!! For now just store username because ClientSession leaves a trailing `=' which is invalid.
-    let cookie = S.unpack username
-    let cookieHeader = S.pack $ "Set-Cookie: _sess=" ++ cookie ++ "; path=/;"
-    let resp = resp301 "/"
-    return $ resp { respHeaders = cookieHeader:(respHeaders resp)}
+    setSession $ S.unpack username
+    redirectTo "/"
 
   -- Logs the user out and redirects to the home page
-  restDestroy self req = do
-    let cookieHeader = S.pack $ "Set-Cookie: _sess=; path=/; expires=Thu, Jan 01 1970 00:00:00 UTC;"
-    let resp = resp301 "/"
-    return $ resp { respHeaders = cookieHeader:(respHeaders resp)}
+  restDestroy self arg = do
+    destroySession
+    redirectTo "/"
