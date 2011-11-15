@@ -22,7 +22,7 @@ cookieFromString str = liftIO $ fmap S.unpack $ encryptIO key str
   where (Right key) = cookieKey
 instance RestController SessionsController where
   -- Renders the login page
-  restNew self req = do
+  restNew self = do
     view <- hastacheFile defaultConfig "views/sessions/new.html" $ (\x -> MuNothing)
     return $ mkHtmlResp stat200 $ view
 
