@@ -44,7 +44,7 @@ instance Monad m => Monad (RestControllerContainer t m) where
 
   controller >>= next = RestControllerContainer $ \req resp-> 
                                      let (result, req', resp') = runRest controller req resp
-                                     in runRest (next result) req' resp'
+                                     in seq result $ runRest (next result) req' resp'
 
 instance MonadIO m => MonadIO (RestControllerContainer t m) where
   liftIO x = RestControllerContainer $ \req resp -> (result, req, resp)
