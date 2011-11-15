@@ -5,6 +5,7 @@ import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Map
+import Data.Maybe
 import qualified Data.IterIO.Iter as I
 import Text.Hastache
 import Text.Hastache.Context
@@ -31,7 +32,7 @@ instance RestController SessionsController where
   restCreate self params = do
     redirectTo "/"
     req <- getHttpReq
-    let username = S.pack $ L.unpack $ foldl (\accm (k, v) -> if k == "username" then v else accm) "" params
+    let username = S.pack $ L.unpack $ fromJust $ Prelude.lookup "session[username]" params
     -- TODO: INSECURE!!! For now just store username because ClientSession leaves a trailing `=' which is invalid.
     setSession $ S.unpack username
 

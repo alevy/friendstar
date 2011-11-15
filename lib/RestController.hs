@@ -124,6 +124,7 @@ class RestController a where
   _restNoVar self handler req = do
     params <- paramList req
     let (_, _, response) = runRest (handler self params) req $ mkHttpHead $ stat200
+    liftIO $ putStrLn $ show response
     return $ response
 
   _restWithVar :: (MonadIO t, Monad m) => a
@@ -134,6 +135,7 @@ class RestController a where
     params <- paramList req
     let arg = head $ reqPathParams req
     let (_, _, response) = runRest (handler self arg params) req $ mkHttpHead $ stat200
+    liftIO $ putStrLn $ show response
     return $ response
 
 paramList :: (MonadIO t) => HttpReq s -> Iter L t [(S, L)]
