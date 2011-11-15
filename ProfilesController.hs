@@ -13,9 +13,9 @@ import RoutedServer
 data ProfilesController = ProfilesController
 
 instance RestController ProfilesController where
-  restIndex self req = do
-    view <- hastacheFile defaultConfig "views/profiles/index.html" context
-    return $ mkHtmlResp stat200 $ L.pack $ (show $ reqHeaders req) ++ "<br/><br/>" ++ (show $ usernameFromSession req)
+  restIndex self = do
+    username <- usernameFromSession
+    return $ mkHtmlResp stat200 $ L.pack $ (show username)
     where context _ = MuNothing
 
   restShow self req = do
