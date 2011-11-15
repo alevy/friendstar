@@ -106,10 +106,9 @@ getTemplate path = unsafePerformIO $ do
     file <- openFile (sanitizePath path) ReadMode
     hGetContents file
 
-paramMap :: MonadIO m => String -> HttpReq s -> Iter L.ByteString m (Map String L.ByteString)
-paramMap objName req = foldForm req handlePart empty
-  where handlePart accm field = do
-          val <- pureI
-          return $ maybe (accm) (\x -> insert (head x) val accm) (matchRegex rg $ S.unpack $ ffName field)
+paramMap :: [(S.ByteString, L.ByteString)] -> String -> Map String L.ByteString
+paramMap prms objName = foldl handle empty prms
+  where handle accm (k, v) = do
+          maybe (accm) (\x -> insert (head x) v accm) (matchRegex rg $ S.unpack k)
         rg = mkRegex $ objName ++ "\\[([^]]+)\\]"
 

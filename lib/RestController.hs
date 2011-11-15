@@ -96,40 +96,48 @@ getHttpReq :: RestControllerContainer t m (HttpReq t)
 getHttpReq = RestControllerContainer $ \req resp -> (req, req, resp)
 
 class RestController a where
-  restIndex :: (MonadIO m, Monad m) => a -> RestControllerContainer t m ()
-  restIndex _ = respond404
+  restIndex :: (MonadIO m, Monad m) => a -> [(S, L)] -> RestControllerContainer t m ()
+  restIndex _ _ = respond404
 
-  restShow :: (MonadIO m, Monad m) => a -> S.ByteString -> RestControllerContainer t m ()
-  restShow _ arg = respond404
+  restShow :: (MonadIO m, Monad m) => a -> S.ByteString -> [(S, L)] -> RestControllerContainer t m ()
+  restShow _ _ _ = respond404
 
-  restEdit :: (MonadIO m, Monad m) => a -> S.ByteString -> RestControllerContainer t m ()
-  restEdit _ arg = respond404
+  restEdit :: (MonadIO m, Monad m) => a -> S.ByteString -> [(S, L)] -> RestControllerContainer t m ()
+  restEdit _ _ _ = respond404
 
-  restNew :: (MonadIO m, Monad m) => a -> RestControllerContainer t m ()
-  restNew _ = respond404
+  restNew :: (MonadIO m, Monad m) => a -> [(S, L)] -> RestControllerContainer t m ()
+  restNew _ _ = respond404
 
-  restCreate :: (MonadIO m, Monad m) => a -> RestControllerContainer t m ()
-  restCreate _ = respond404
+  restCreate :: (MonadIO m, Monad m) => a -> [(S, L)] -> RestControllerContainer t m ()
+  restCreate _ _ = respond404
 
-  restUpdate :: (MonadIO m, Monad m) => a -> S.ByteString -> RestControllerContainer t m ()
-  restUpdate _ arg = respond404
+  restUpdate :: (MonadIO m, Monad m) => a -> S.ByteString -> [(S, L)] -> RestControllerContainer t m ()
+  restUpdate _ _ _ = respond404
 
-  restDestroy :: (MonadIO m, Monad m) => a -> S.ByteString -> RestControllerContainer t m ()
-  restDestroy _ arg = respond404
+  restDestroy :: (MonadIO m, Monad m) => a -> S.ByteString -> [(S, L)] -> RestControllerContainer t m ()
+  restDestroy _ _ _ = respond404
 
   _restNoVar :: (MonadIO t, Monad m) => a
-                -> (a -> RestControllerContainer s m ())
+                -> (a -> [(S, L)] -> RestControllerContainer s m ())
                 -> HttpReq s
                 -> Iter L t (HttpResp m)
   _restNoVar self handler req = do
-    let (_, _, response) = runRest (handler self) req $ mkHttpHead $ stat200
+    params <- paramList req
+    let (_, _, response) = runRest (handler self params) req $ mkHttpHead $ stat200
     return $ response
 
   _restWithVar :: (MonadIO t, Monad m) => a
-                 -> (a -> S.ByteString -> RestControllerContainer s m ())
+                 -> (a -> S.ByteString -> [(S, L)] -> RestControllerContainer s m ())
                  -> HttpReq s
                  -> Iter L t (HttpResp m)
   _restWithVar self handler req = do
+    params <- paramList req
     let arg = head $ reqPathParams req
-    let (_, _, response) = runRest (handler self arg) req $ mkHttpHead $ stat200
+    let (_, _, response) = runRest (handler self arg params) req $ mkHttpHead $ stat200
     return $ response
+
+paramList :: (MonadIO t) => HttpReq s -> Iter L t [(S, L)]
+paramList req = foldForm req handle []
+  where handle accm field = do
+          val <- pureI
+          return $ (ffName field, val):accm

@@ -12,5 +12,5 @@ import Profile
 data PostController = PostController
 
 instance RestController PostController where
-  restCreate self = respond404
+  restCreate self params = respond404
 

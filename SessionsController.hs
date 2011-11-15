@@ -1,4 +1,4 @@
-
+{-# LANGUAGE OverloadedStrings #-}
 module SessionsController where
 
 import Control.Monad.Trans
@@ -24,19 +24,18 @@ cookieFromString str = liftIO $ fmap S.unpack $ encryptIO key str
   where (Right key) = cookieKey
 instance RestController SessionsController where
   -- Renders the login page
-  restNew self = do
+  restNew self _ = do
     renderTemplate "views/sessions/new.html" $ (\x -> MuNothing)
 
   -- Creates the authentication token and redirects to the user profile page.
-  restCreate self = do
+  restCreate self params = do
     req <- getHttpReq
-    params <- I.run $ paramMap "session" req
-    let username = S.pack $ L.unpack $ params ! "username"
+    let username = S.pack $ L.unpack $ foldl (\accm (k, v) -> if k == "username" then v else accm) "" params
     -- TODO: INSECURE!!! For now just store username because ClientSession leaves a trailing `=' which is invalid.
     setSession $ S.unpack username
     redirectTo "/"
 
   -- Logs the user out and redirects to the home page
-  restDestroy self arg = do
+  restDestroy self arg _ = do
     destroySession
     redirectTo "/"
