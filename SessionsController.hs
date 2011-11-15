@@ -29,13 +29,13 @@ instance RestController SessionsController where
 
   -- Creates the authentication token and redirects to the user profile page.
   restCreate self params = do
+    redirectTo "/"
     req <- getHttpReq
     let username = S.pack $ L.unpack $ foldl (\accm (k, v) -> if k == "username" then v else accm) "" params
     -- TODO: INSECURE!!! For now just store username because ClientSession leaves a trailing `=' which is invalid.
     setSession $ S.unpack username
-    redirectTo "/"
 
   -- Logs the user out and redirects to the home page
   restDestroy self arg _ = do
+    redirectTo $ "/"
     destroySession
-    redirectTo "/"
