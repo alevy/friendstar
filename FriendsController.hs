@@ -22,14 +22,18 @@ instance RestController FriendsController where
   -- List friends
   restIndex self _ = do
     mUser <- usernameFromSession
-    user <- liftIO $ run $ findProfileByUsername $ fromJust mUser
-    render "text/html" $ L.pack $ show (friends user) ++ show (incomingFriendRequests user)
+    profile <- liftIO $ run $ findProfileByUsername $ fromJust mUser
+    friendList <- liftIO $ run $ mapM (findProfile) (friends profile)
+    friendReqList <- liftIO $ run $ mapM (findProfile) (incomingFriendRequests profile)
+    let expandedProfile = addVar "firstName" (firstName profile) $ addVar "lastName" (lastName profile) $ addGenericList "friends" friendList $ addGenericList "friendRequests" friendReqList $ emptyContext
+    renderTemplate "views/friends/index.html" $ expandedProfile
 
   -- List friends of a user
   restShow self user _ = do
-    mUser <- usernameFromSession
-    profile <- liftIO $ run $ findProfileByUsername $ fromJust mUser
-    renderTemplate "views/friends/show.html" $ mkGenericContext profile
+    profile <- liftIO $ run $ findProfileByUsername $ user
+    friendList <- liftIO $ run $ mapM (findProfile) (friends profile)
+    let expandedProfile = addVar "firstName" (firstName profile) $ addVar "lastName" (lastName profile) $ addGenericList "friends" friendList $ emptyContext
+    renderTemplate "views/friends/show.html" $ expandedProfile
 
   -- Accept friend request
   --restUpdate self user params = do

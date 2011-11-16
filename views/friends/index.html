@@ -7,6 +7,14 @@
 </head>
 <body>
 <h1>Friends List for {{firstName}} {{lastName}}</h1>
+<div id="friendRequests">
+  <h2>Friend Requests</h2>
+  <ol>
+    {{#friendRequests}}
+    <li>{{firstName}} {{lastName}}</li>
+    {{/friendRequests}}
+  </ol>
+</div>
 <div id="friends">
   <h2>Friends</h2>
   <ol>
