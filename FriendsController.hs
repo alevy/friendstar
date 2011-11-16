@@ -36,10 +36,23 @@ instance RestController FriendsController where
     renderTemplate "views/friends/show.html" $ expandedProfile
 
   -- Accept friend request
-  --restUpdate self user params = do
+  restDestroy self user _ = do
+    mUser <- usernameFromSession
+    profile <- liftIO $ run $ findProfileByUsername $ fromJust mUser
+    friendProfile <- liftIO $ run $ findProfileByUsername user
+    if (friendshipRequestExists profile friendProfile) then
+      liftIO $ run $ acceptFriendship (profileId profile) (profileId friendProfile)
+      render "text/html" $ L.pack $ show (username friendProfile)
+    else
+      render "text/html" "Friendship request not present!"
 
   -- Remove a friend or request
-  --restDestroy
+  restDestroy self user _ = do
+    mUser <- usernameFromSession
+    profile <- liftIO $ run $ findProfileByUsername $ fromJust mUser
+    friendProfile <- liftIO $ run $ findProfileByUsername user
+    deletedUser <- liftIO $ run $ removeFriendship (fromJust $ profileId profile) (fromJust $ profileId friendProfile)
+    render "text/html" $ L.pack $ show deletedUser
 
   -- Friend request form
   restNew self _ = do
