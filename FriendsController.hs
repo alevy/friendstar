@@ -19,7 +19,7 @@ import Profile
 data FriendsController = FriendsController
 
 instance RestController FriendsController where
-  -- List friends
+  -- List friends and friend requests
   restIndex self _ = do
     mUser <- usernameFromSession
     profile <- liftIO $ run $ findProfileByUsername $ fromJust mUser
