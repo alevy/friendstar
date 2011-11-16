@@ -19,7 +19,7 @@ instance RestController ProfilesController where
   restIndex self _ = do
     mUser <- usernameFromSession
     case mUser of
-      Just user -> render "text/html" $ L.pack $ S.unpack user
+      Just user -> redirectTo ("/profiles/" ++ (S.unpack user))
       otherwise -> render "text/html" "Not Logged in!"
 
   restShow self user _ = do

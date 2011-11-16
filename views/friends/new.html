@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>FriendStar</title>
+	<link rel="stylesheet" type="text/css" href="/style.css"/>
+</head>
+<body>
+  <h1>Add Friend:</h1>
+  <form action="/friends" method="POST"  id="friendrequest_form">
+    <p>
+      <label for="friend_username">Username:</label><br/>
+      <input type="text" name="friend[username]" id="friend_username" 
+      value="{{username}}"/>
+    </p>
+    <p><input type="submit" value="Add Friend"/></p>
+  </form>
+</body>
+</html>

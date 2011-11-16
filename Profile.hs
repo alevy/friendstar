@@ -129,6 +129,14 @@ saveProfile profile
       return profile
   where (Doc doc) = val profile
 
+-- For debugging list all profiles
+{-
+listProfiles :: MonadIO m => () -> Action m [FSProfile]
+listProfiles _ = do
+  profiles <- find (select [] "profiles")
+  return $ fmap (cast' . Doc) (rest profiles)
+-}
+
 {-
  - Posts Operations
  -}
@@ -164,9 +172,13 @@ friendshipRequestExists myProfile friendProfile
   where friendRequests = incomingFriendRequests friendProfile
         myProfileId = profileId myProfile
 
--- Retrieve the friend requests
-
 -- Accept a friend request
+acceptFriendship :: (MonadIO m) => FSObjectId -> FSObjectId -> Action m FSObjectId
+acceptFriendship myId friendId = do
+    -- XXX
+    return myId
+
+-- Remove friend or friend request
 
 run act = do
   pipe <- runIOE $ connect $ host "127.0.0.1"
