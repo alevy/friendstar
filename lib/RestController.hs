@@ -15,6 +15,7 @@ module RestController ( RestController,
                         render,
                         addVar,
                         addGeneric,
+                        addGenericList,
                         emptyContext,
                         renderTemplate,
                         redirectTo,
@@ -104,6 +105,10 @@ addGeneric name var context = \x ->
       strX = S.unpack x
       varCtx = mkGenericContext var
   in if prefix == name then varCtx postfix else context name
+
+addGenericList :: (Data a) => S -> [a] -> MuContext IO -> MuContext IO
+addGenericList name list context = (\x -> if x == name then MuList flist else context x)
+  where flist = fmap mkGenericContext list
 
 renderTemplate :: (MonadIO m, Monad m) => FilePath -> MuContext IO -> RestControllerContainer t m ()
 renderTemplate tmpl context = do
