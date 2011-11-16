@@ -83,7 +83,7 @@ render ctype text = RestControllerContainer $ \req resp -> ((), req, mkResp resp
 -- the template does not depend on any variables, or as an initial building block for
 -- 'addVar' and 'addGeneric'
 emptyContext :: MuContext IO
-emptyContext _ = MuNothing
+emptyContext _ = MuBool False
 
 -- | Adds the key-value pair (name, var) to context.
 -- For example,
@@ -94,7 +94,10 @@ emptyContext _ = MuNothing
 --  Will render to:
 --    Frank has 4 posts.
 addVar :: (MuVar a) => S -> a -> MuContext IO -> MuContext IO
-addVar name var context = (\x -> if x == name then MuVariable var else context x)
+addVar name var context = check
+  where check str | str == name = MuVariable var
+                  | (S.unpack str) == ((S.unpack name) ++ "?") = MuBool True
+                  | True = context str
 
 -- | Adds the key-value pair (name, var) to context, where var is
 -- an instance of 'Data.Data'.
