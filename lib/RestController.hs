@@ -78,13 +78,25 @@ render ctype text = RestControllerContainer $ \req resp -> ((), req, mkResp resp
         mkResp resp = resp { respHeaders = respHeaders resp ++ [ctypeHeader, len],
                         respBody = inumPure text }
 
+-- | Returns an empty context for Hastache templates. Pass this to renderTemplate if
+-- the template does not depend on any variables, or as an initial building block for
+-- 'addVar' and 'addGeneric'
 emptyContext :: MuContext IO
 emptyContext _ = MuNothing
 
--- addToContext "profile_id" profileId $ emptyContext
+-- | Adds the key-value pair (name, var) to context.
+-- For example,
+--  In controller:
+--    renderTemplae "mytemplate.html" $ addVar "num_posts" 4 $ addVar "name" "Frank" $ emptyContext
+--  Then in the view:
+--    {{ name }} has {{ num_posts }} posts.
+--  Will render to:
+--    Frank has 4 posts.
 addVar :: (MuVar a) => S -> a -> MuContext IO -> MuContext IO
 addVar name var context = (\x -> if x == name then MuVariable var else context x)
 
+-- | Adds the key-value pair (name, var) to context, where var is
+-- an instance of 'Data.Data'.
 addGeneric :: (Data a) => S -> a -> MuContext IO -> MuContext IO
 addGeneric name var context = \x ->
   let prefix = S.pack $ takeWhile (/= '.') strX
