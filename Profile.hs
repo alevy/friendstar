@@ -129,6 +129,14 @@ saveProfile profile
       return profile
   where (Doc doc) = val profile
 
+-- For debugging list all profiles
+{-
+listProfiles :: MonadIO m => () -> Action m [FSProfile]
+listProfiles _ = do
+  profiles <- find (select [] "profiles")
+  return $ fmap (cast' . Doc) (rest profiles)
+-}
+
 {-
  - Posts Operations
  -}
