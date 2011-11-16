@@ -13,6 +13,9 @@ module RestController ( RestController,
                         destroySession,
                         usernameFromSession,
                         render,
+                        addVar,
+                        addGeneric,
+                        emptyContext,
                         renderTemplate,
                         redirectTo,
                         getHttpReq,
@@ -22,12 +25,14 @@ import Control.Monad
 import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
+import Data.Data
 import Data.Monoid
 import Data.IterIO
 import Data.IterIO.Iter
 import Data.IterIO.Http
 import Data.IterIO.HttpRoute
 import Text.Hastache
+import Text.Hastache.Context
 
 import System.IO.Unsafe
 
@@ -73,9 +78,24 @@ render ctype text = RestControllerContainer $ \req resp -> ((), req, mkResp resp
         mkResp resp = resp { respHeaders = respHeaders resp ++ [ctypeHeader, len],
                         respBody = inumPure text }
 
+emptyContext :: MuContext IO
+emptyContext _ = MuNothing
+
+-- addToContext "profile_id" profileId $ emptyContext
+addVar :: (MuVar a) => S -> a -> MuContext IO -> MuContext IO
+addVar name var context = (\x -> if x == name then MuVariable var else context x)
+
+addGeneric :: (Data a) => S -> a -> MuContext IO -> MuContext IO
+addGeneric name var context = \x ->
+  let prefix = S.pack $ takeWhile (/= '.') strX
+      postfix = S.pack $ tail $ dropWhile (/= '.') strX
+      strX = S.unpack x
+      varCtx = mkGenericContext var
+  in if prefix == name then varCtx postfix else context name
+
 renderTemplate :: (MonadIO m, Monad m) => FilePath -> MuContext IO -> RestControllerContainer t m ()
 renderTemplate tmpl context = do
-  str <- liftIO $ hastacheFile defaultConfig tmpl context
+  str <- liftIO $ hastacheFile (defaultConfig { muTemplateFileDir = Just "views" }) tmpl context
   render "text/html" str
 
 setSession :: String -> RestControllerContainer t m ()
