@@ -7,7 +7,6 @@ import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.IterIO.Iter as I (run)
 import Data.IterIO.Inum
 import Data.IterIO.Http
-import Text.Hastache
 import Text.Hastache.Context
 
 import Profile

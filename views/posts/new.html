@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>FriendStar Registration</title>
+	<link rel="stylesheet" type="text/css" href="/style.css"/>
+</head>
+<body>
+  <h1>New Post</h1>
+  <form action="/posts/" method="POST" id="new_post_form">
+    <p>
+      <label for="profile[username]">Username:</label><br/>
+      <input type="text" name="profile[username]" id="profile_username"/>
+    </p>
+    <p>
+      <label for="post_text">Post:</label><br/>
+      <textarea name="post[text]" id="post_text"></textarea>
+    </p>
+    <p><input type="submit" value="Post!"/></p>
+  </form>
+</body>
+</html>
