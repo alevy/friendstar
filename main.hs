@@ -11,6 +11,7 @@ import RoutedServer
 import SessionsController
 import ProfilesController
 import PostsController
+import FriendsController
 
 main :: IO ()
 main = do
@@ -20,6 +21,7 @@ routing = [ routeTop $ routeConst $ resp301 "/index.html",
                     routeName "sessions" $ routeRestController (SessionsController),
                     routeName "posts" $ routeRestController (PostController),
                     routeName "profiles" $ routeRestController (ProfilesController),
+                    routeName "friends" $ routeRestController (FriendsController),
                     routeFileSys mimeMap (dirRedir "/index.html") "public"
                   ]
 
