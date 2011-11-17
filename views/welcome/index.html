@@ -1,0 +1,34 @@
+{{> header.html}}
+{{#current_user}}
+<p>
+  Welcome Back! Go to your profile <a href="/profiles/{{current_user.username}}">here</a>.
+</p>
+{{/current_user}}
+{{^current_user}}
+<p>
+  Welcome to FriendStar, a social network for people with thoughts. Register to begin:
+</p>
+<form action="/profiles/" method="POST" id="new_profile_form">
+  <div class="field">
+    <label for="profile_username">Username<sup>*</sup>:</label>
+    <input type="text" name="profile[username]" id="profile_username"/>
+  </div>
+  <div class="field">
+    <label for="profile_first_name">First Name<sup>*</sup>:</label>
+    <input type="text" name="profile[first_name]" id="profile_first_name"/>
+  </div>
+  <div class="field">
+    <label for="profile_middle_name">Middle Name:</label>
+    <input type="text" name="profile[middle_name]" id="profile_middle_name"/>
+  </div>
+  <div class="field">
+    <label for="profile_last_name">Last Name<sup>*</sup>:</label>
+    <input type="text" name="profile[last_name]" id="profile_last_name"/>
+  </div>
+  <input type="submit" value="Create Profile"/>
+</form>
+<p>
+  Have an account already? <a href="/sessions/new">Login!</a>
+</p>
+{{/current_user}}
+{{> footer.html}}

@@ -19,6 +19,7 @@ import Data.Typeable
 import Data.Maybe
 import Database.MongoDB
 import Text.Regex
+import System.IO.Unsafe
 
 type FSObjectId = S.ByteString
 
@@ -180,8 +181,10 @@ acceptFriendship myId friendId = do
 
 -- Remove friend or friend request
 
-run act = do
-  pipe <- runIOE $ connect $ host "127.0.0.1"
+server = runIOE $ connect $ host "127.0.0.1"
+
+run act = unsafePerformIO $ do
+  pipe <- server
   (Right profiles) <- access pipe master "friendstar" act
   return profiles
 

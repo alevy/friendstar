@@ -23,26 +23,26 @@ instance RestController ProfilesController where
       otherwise -> render "text/html" "Not Logged in!"
 
   restShow self user _ = do
-    profile <- liftIO $ run $ findProfileByUsername user
+    let profile = run $ findProfileByUsername user
     renderTemplate "views/profiles/show.html" $ mkGenericContext profile
   
   restEdit self user _ = do
-    profile <- liftIO $ run $ findProfileByUsername user
+    let profile = run $ findProfileByUsername user
     renderTemplate "views/profiles/edit.html" $ mkGenericContext profile
   
   restCreate self params = do
     req <- getHttpReq
     let profile = profileFromMap $ paramMap params "profile"
-    profile <- liftIO $ run $ saveProfile profile
+    let profile = run $ saveProfile profile
     renderTemplate "views/thankyou.html" $ mkGenericContext profile
   
   restUpdate self user params = do
     req <- getHttpReq
     let p = paramMap params "profile"
-    currentProfile <- liftIO $ run $ findProfileByUsername user
+    let currentProfile = run $ findProfileByUsername user
     let profile = (profileFromMap p)
                       { profileId = profileId currentProfile,
                         username = username currentProfile }
     u <- liftIO $ putStrLn $ show params
-    profile <- liftIO $ run $ saveProfile profile
+    let profile = run $ saveProfile profile
     redirectTo ("/profiles/" ++ (username profile))

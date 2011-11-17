@@ -22,16 +22,16 @@ instance RestController FriendsController where
   -- List friends and friend requests
   restIndex self _ = do
     mUser <- usernameFromSession
-    profile <- liftIO $ run $ findProfileByUsername $ fromJust mUser
-    friendList <- liftIO $ run $ mapM (findProfile) (friends profile)
-    friendReqList <- liftIO $ run $ mapM (findProfile) (incomingFriendRequests profile)
+    let profile = run $ findProfileByUsername $ fromJust mUser
+    let friendList = run $ mapM (findProfile) (friends profile)
+    let friendReqList = run $ mapM (findProfile) (incomingFriendRequests profile)
     let expandedProfile = addVar "firstName" (firstName profile) $ addVar "lastName" (lastName profile) $ addGenericList "friends" friendList $ addGenericList "friendRequests" friendReqList $ emptyContext
     renderTemplate "views/friends/index.html" $ expandedProfile
 
   -- List friends of a user
   restShow self user _ = do
-    profile <- liftIO $ run $ findProfileByUsername $ user
-    friendList <- liftIO $ run $ mapM (findProfile) (friends profile)
+    let profile = run $ findProfileByUsername $ user
+    let friendList = run $ mapM (findProfile) (friends profile)
     let expandedProfile = addVar "firstName" (firstName profile) $ addVar "lastName" (lastName profile) $ addGenericList "friends" friendList $ emptyContext
     renderTemplate "views/friends/show.html" $ expandedProfile
 
@@ -48,9 +48,9 @@ instance RestController FriendsController where
   -- Add friend request
   restCreate self params = do
     mUser <- usernameFromSession
-    user <- liftIO $ run $ findProfileByUsername $ fromJust mUser
+    let user = run $ findProfileByUsername $ fromJust mUser
     let reqUser = S.pack $ L.unpack $ fromJust $ lookup "friend[username]" params
-    fUser <- liftIO $ run $ findProfileByUsername $ reqUser
-    liftIO $ run $ requestFriendship (fromJust $ profileId user) (fromJust $ profileId fUser)
+    let fUser = run $ findProfileByUsername $ reqUser
+    return $ run $ requestFriendship (fromJust $ profileId user) (fromJust $ profileId fUser)
     render "text/html" $ L.pack $ show (username fUser)
 

@@ -25,14 +25,14 @@ instance RestController PostController where
 
   restCreate self params = do
     mUser <- usernameFromSession
-    user <- liftIO $ run $ findProfileByUsername $ fromJust mUser
+    let user = run $ findProfileByUsername $ fromJust mUser
     let mProfileUsername = S.pack $ L.unpack $ fromJust $ lookup "profile[username]" params
-    profile <- liftIO $ run $ findProfileByUsername mProfileUsername
+    let profile = run $ findProfileByUsername mProfileUsername
     let postMap = paramMap params "post"
     now <- liftIO $ getCurrentTime
     let post = FSPost { postAuthorId = fromJust $ profileId user,
                         postTimestamp = now,
                         postText = T.pack $ L.unpack $ postMap ! "text" }
-    liftIO $ run $ postToProfile post $ fromJust $ profileId user
+    return $ run $ postToProfile post $ fromJust $ profileId user
     render "text/html" $ L.pack $ show post
 

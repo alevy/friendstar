@@ -1,12 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>FriendStar</title>
-	<link rel="stylesheet" type="text/css" href="/style.css"/>
-</head>
-<body>
-<h1>{{firstName}} {{lastName}}</h1>
+{{> header.html}}
+<h2>{{firstName}} {{lastName}}</h2>
 <nav><a href="/profiles/edit/{{username}}">Edit</a></nav>
 <div id="details">
   Current City: {{currentCity}}
@@ -19,5 +12,4 @@
     {{/posts}}
   </ol>
 </div>
-</body>
-</html>
+{{> footer.html}}

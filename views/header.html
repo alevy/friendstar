@@ -1,12 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>FriendStar</title>
-	<link rel="stylesheet" type="text/css" href="/style.css"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>FriendStar</title>
+  <link rel="stylesheet" type="text/css" href="/style.css"/>
+  <script src="/javascript/jquery-1.4.2.js" type="text/javascript" charset="utf-8"></script>
+  <script src="/javascript/application.js" type="text/javascript" charset="utf-8"></script>
 </head>
 <body>
 <header>
-  <h1>FriendStar</h1>
+  <hgroup>
+    <h1>FriendStar</h1>
+    <h2>a social network for people with thoughts</h2>
+  </hgroup>
+  <nav>
+    <ul>
+      {{#current_user}}
+      <li>Hi {{current_user.firstName}}! <a href="/sessions/destroy" data-method="post">Logout</a></li>
+      {{/current_user}}
+    </ul>
+  </nav>
+  <div style="clear:both"></div>
 </header>
-<div>
+<div id="content">

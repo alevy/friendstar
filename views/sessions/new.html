@@ -1,12 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>FriendStar</title>
-	<link rel="stylesheet" type="text/css" href="/style.css"/>
-</head>
-<body>
-  <h1>Login:</h1>
+{{> header.html}}
+  <h2>Login</h2>
   <form action="/sessions" method="POST"  id="login_form">
     <p>
       <label for="session_username">Username:</label><br/>
@@ -14,5 +7,4 @@
     </p>
     <p><input type="submit" value="Login"/></p>
   </form>
-</body>
-</html>
+{{> footer.html}}

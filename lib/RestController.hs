@@ -102,12 +102,13 @@ addVar name var context = check
 -- | Adds the key-value pair (name, var) to context, where var is
 -- an instance of 'Data.Data'.
 addGeneric :: (Data a) => S -> a -> MuContext IO -> MuContext IO
-addGeneric name var context = \x ->
-  let prefix = S.pack $ takeWhile (/= '.') strX
-      postfix = S.pack $ tail $ dropWhile (/= '.') strX
-      strX = S.unpack x
-      varCtx = mkGenericContext var
-  in if prefix == name then varCtx postfix else context name
+addGeneric name var context = check
+  where check x | x == name = MuBool True
+                | (prefix x) == name = varCtx (postfix x)
+                | otherwise = context name
+        prefix x = S.pack $ takeWhile (/= '.') $ S.unpack x
+        postfix x = S.pack $ tail $ dropWhile (/= '.') $ S.unpack x
+        varCtx = mkGenericContext var
 
 addGenericList :: (Data a) => S -> [a] -> MuContext IO -> MuContext IO
 addGenericList name list context = (\x -> if x == name then MuList flist else context x)

@@ -8,6 +8,7 @@ import qualified Data.ListLike as LL
 import RestController
 import RoutedServer
 
+import WelcomeController
 import SessionsController
 import ProfilesController
 import PostsController
@@ -17,7 +18,8 @@ main :: IO ()
 main = do
   runHttpServer 8000 routing
 
-routing = [ routeTop $ routeConst $ resp301 "/index.html",
+routing = [ routeTop $ routeConst $ resp301 "/welcome",
+                    routeName "welcome" $ routeRestController (WelcomeController),
                     routeName "sessions" $ routeRestController (SessionsController),
                     routeName "posts" $ routeRestController (PostController),
                     routeName "profiles" $ routeRestController (ProfilesController),
