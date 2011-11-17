@@ -177,6 +177,7 @@ friendshipRequestExists myProfile friendProfile
 acceptFriendship :: (MonadIO m) => FSObjectId -> FSObjectId -> Action m FSObjectId
 acceptFriendship myObjId friendObjId = do
   modify (select ["_id" =: myId] "profiles") ["$push" =: ["friends" =: friendId]]
+  modify (select ["_id" =: friendId] "profiles") ["$push" =: ["friends" =: myId]]
   modify (select ["_id" =: myId] "profiles") ["$pull" =: ["incoming_friend_requests" =: friendId]]
   return friendObjId
   where myId = toObjectId myObjId
