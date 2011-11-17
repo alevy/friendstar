@@ -163,12 +163,12 @@ requestFriendship fromUser toUser = do
         toId = toObjectId toUser
 
 -- Test if a friend request already exists
-friendshipRequestExists :: (MonadIO m) => FSProfile -> FSProfile -> m Bool
+friendshipRequestExists :: FSProfile -> FSProfile -> Bool
 friendshipRequestExists myProfile friendProfile
   | isJust myProfileId = do
-    return $ elem (fromJust myProfileId) friendRequests
+    elem (fromJust myProfileId) friendRequests
   | otherwise = do
-    return False
+    False
     -- Need force this to error out in a rational way but this is a safe bet.
   where friendRequests = incomingFriendRequests friendProfile
         myProfileId = profileId myProfile
