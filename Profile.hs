@@ -175,11 +175,22 @@ friendshipRequestExists myProfile friendProfile
 
 -- Accept a friend request
 acceptFriendship :: (MonadIO m) => FSObjectId -> FSObjectId -> Action m FSObjectId
-acceptFriendship myId friendId = do
-    -- XXX
-    return myId
+acceptFriendship myObjId friendObjId = do
+  modify (select ["_id" =: myId] "profiles") ["$push" =: ["friends" =: friendId]]
+  modify (select ["_id" =: myId] "profiles") ["$pull" =: ["incoming_friend_requests" =: friendId]]
+  return friendObjId
+  where myId = toObjectId myObjId
+        friendId = toObjectId friendObjId
 
 -- Remove friend or friend request
+-- XXX: Probably we want to return an error on failure
+removeFriendship :: (MonadIO m, Applicative m) => FSObjectId -> FSObjectId -> Action m FSObjectId
+removeFriendship myObjId friendObjId = do
+  modify (select ["_id" =: myId] "profiles") ["$pull" =: ["incoming_friend_requests" =: friendId]]
+  modify (select ["_id" =: myId] "profiles") ["$pull" =: ["friends" =: friendId]]
+  return friendObjId
+  where myId = toObjectId myObjId
+        friendId = toObjectId friendObjId
 
 server = runIOE $ connect $ host "127.0.0.1"
 
