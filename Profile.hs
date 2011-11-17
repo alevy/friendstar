@@ -189,6 +189,7 @@ removeFriendship :: (MonadIO m, Applicative m) => FSObjectId -> FSObjectId -> Ac
 removeFriendship myObjId friendObjId = do
   modify (select ["_id" =: myId] "profiles") ["$pull" =: ["incoming_friend_requests" =: friendId]]
   modify (select ["_id" =: myId] "profiles") ["$pull" =: ["friends" =: friendId]]
+  modify (select ["_id" =: friendId] "profiles") ["$pull" =: ["friends" =: myId]]
   return friendObjId
   where myId = toObjectId myObjId
         friendId = toObjectId friendObjId

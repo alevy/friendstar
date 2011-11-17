@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module FriendsController where
 
+import System.IO.Unsafe
 import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
@@ -44,6 +45,7 @@ instance RestController FriendsController where
       return $ run $
         acceptFriendship (fromJust $ profileId profile)
                         (fromJust $ profileId friendProfile)
+      --redirectTo "/friends/"
       render "text/html" $ L.pack $ show (username friendProfile)
     else
       render "text/html" "Friendship request not present!"
@@ -54,6 +56,7 @@ instance RestController FriendsController where
     let profile = run $ findProfileByUsername $ fromJust mUser
     let friendProfile = run $ findProfileByUsername user
     let deletedUser = run $ removeFriendship (fromJust $ profileId profile) (fromJust $ profileId friendProfile)
+    --redirectTo "/friends/"
     render "text/html" $ L.pack $ show deletedUser
 
   -- Friend request form

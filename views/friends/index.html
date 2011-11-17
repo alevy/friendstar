@@ -1,17 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>FriendStar</title>
-	<link rel="stylesheet" type="text/css" href="/style.css"/>
-</head>
-<body>
-<h1>Friends List for {{firstName}} {{lastName}}</h1>
+{{> header.html}}
 <div id="friendRequests">
   <h2>Friend Requests</h2>
   <ol>
     {{#friendRequests}}
-    <li>{{firstName}} {{lastName}}</li>
+    <li>{{firstName}} {{lastName}}</li> <a href="/friends/{{username}}" 
+	data-method="post">Accept</a>
+    {{/friendRequests}}
+    {{^friendRequests}}
+    No pending friend requests.
     {{/friendRequests}}
   </ol>
 </div>
@@ -19,9 +15,12 @@
   <h2>Friends</h2>
   <ol>
     {{#friends}}
-    <li>{{firstName}} {{lastName}}</li>
+    <li>{{firstName}} {{lastName}}</li> <a href="/friends/destroy/{{username}}" 
+	data-method="post">Unfriend</a>
+    {{/friends}}
+    {{^friends}}
+    You have zero friends. Use the search bar above to find some!
     {{/friends}}
   </ol>
 </div>
-</body>
-</html>
+{{> footer.html}}
