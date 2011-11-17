@@ -3,8 +3,8 @@
   <h2>Friend Requests</h2>
   <ol>
     {{#friendRequests}}
-    <li>{{firstName}} {{lastName}}</li> <a href="/friends/{{username}}" 
-	data-method="post">Accept</a>
+    <li><a href="/profile/{{username}}">{{firstName}} {{lastName}}</a></li> <a 
+	href="/friends/{{username}}" data-method="post">Accept</a>
     {{/friendRequests}}
     {{^friendRequests}}
     No pending friend requests.
@@ -15,8 +15,8 @@
   <h2>Friends</h2>
   <ol>
     {{#friends}}
-    <li>{{firstName}} {{lastName}}</li> <a href="/friends/destroy/{{username}}" 
-	data-method="post">Unfriend</a>
+    <li><a href="/profiles/{{username}}">{{firstName}} {{lastName}}</a></li> <a 
+	href="/friends/destroy/{{username}}" data-method="post">Unfriend</a>
     {{/friends}}
     {{^friends}}
     You have zero friends. Use the search bar above to find some!
