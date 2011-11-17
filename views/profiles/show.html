@@ -1,15 +1,15 @@
 {{> header.html}}
-<h2>{{firstName}} {{lastName}}</h2>
+<h2>{{profile.firstName}} {{profile.lastName}}</h2>
 <nav><a href="/profiles/edit/{{username}}">Edit</a></nav>
 <div id="details">
-  Current City: {{currentCity}}
+  Current City: {{profile.currentCity}}
 </div>
 <div id="posts">
   <h2>Wall</h2>
   <ol>
-    {{#posts}}
+    {{#profile.posts}}
     <li>{{postText}}</li>
-    {{/posts}}
+    {{/profile.posts}}
   </ol>
 </div>
 {{> footer.html}}

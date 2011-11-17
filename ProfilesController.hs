@@ -9,6 +9,7 @@ import Data.IterIO.Inum
 import Data.IterIO.Http
 import Text.Hastache.Context
 
+import Application
 import Profile
 import RestController
 import RoutedServer
@@ -20,11 +21,12 @@ instance RestController ProfilesController where
     mUser <- usernameFromSession
     case mUser of
       Just user -> redirectTo ("/profiles/" ++ (S.unpack user))
-      otherwise -> render "text/html" "Not Logged in!"
+      otherwise -> redirectTo ("/")
 
   restShow self user _ = do
+    context <- contextFromMUsername `fmap` usernameFromSession
     let profile = run $ findProfileByUsername user
-    renderTemplate "views/profiles/show.html" $ mkGenericContext profile
+    renderTemplate "views/profiles/show.html" $ addVar "profile" (123::Integer) $ context
   
   restEdit self user _ = do
     let profile = run $ findProfileByUsername user
