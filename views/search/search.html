@@ -1,0 +1,11 @@
+{{> header.html}}
+<h2>Search results for <em>&quot;{{query}}&quot;</em></h2>
+<ol class="results">
+  {{#profiles}}
+  <li>
+    <a href="/profiles/{{username}}">{{firstName}} {{lastName}}</a>
+    <em>{{currentCity}}</em>
+  </li>
+  {{/profiles}}
+</ol>
+{{> footer.html}}

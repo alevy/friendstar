@@ -13,10 +13,12 @@
 </div>
 <div id="friends">
   <h2>Friends</h2>
-  <ol>
+  <ol class="results">
     {{#friends}}
-    <li><a href="/profiles/{{username}}">{{firstName}} {{lastName}}</a></li> <a 
-	href="/friends/destroy/{{username}}" data-method="post">Unfriend</a>
+    <li>
+      <a href="/profiles/{{username}}">{{firstName}} {{lastName}}</a>
+      <small><a href="/friends/destroy/{{username}}" data-method="post">unfriend</a></small>
+    </li>
     {{/friends}}
     {{^friends}}
     You have zero friends. Use the search bar above to find some!

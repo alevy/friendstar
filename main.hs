@@ -9,6 +9,7 @@ import RestController
 import RoutedServer
 
 import WelcomeController
+import SearchController
 import SessionsController
 import ProfilesController
 import PostsController
@@ -20,6 +21,7 @@ main = do
 
 routing = [ routeTop $ routeConst $ resp301 "/welcome",
                     routeName "welcome" $ routeRestController (WelcomeController),
+                    routeName "search" $ routeRestController (SearchController),
                     routeName "sessions" $ routeRestController (SessionsController),
                     routeName "posts" $ routeRestController (PostController),
                     routeName "profiles" $ routeRestController (ProfilesController),

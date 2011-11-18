@@ -7,17 +7,21 @@ import Prelude hiding (lookup)
 
 import Control.Applicative
 import Control.Monad.Trans
+import Control.Monad.IO.Control
 import Data.Bson
 import Data.Bool
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Data
-import Data.Map
+import Data.Map hiding (map)
 import qualified Data.Text as T
 import Data.Time.Clock
 import Data.Typeable
 import Data.Maybe
+import Data.String.Utils
+import Data.UString (u)
 import Database.MongoDB
+import Text.PhoneticCode.Soundex
 import Text.Regex
 import System.IO.Unsafe
 
@@ -63,13 +67,22 @@ profileFromMap map = defaultFSProfile {
   currentCity = fmap L.unpack $ "current_city" `Data.Map.lookup` map
 }
 
+searchTerms :: FSProfile -> [String]
+searchTerms profile = map soundexNARA terms
+  where terms = [firstName profile,
+                 maybe "" id $ middleName profile,
+                 lastName profile,
+                 username profile] ++
+                 (splitWs $ maybe "" id $ currentCity profile)
+
 instance Val FSProfile where
   val profile = Doc [ "_id" =: (fmap toObjectId $ profileId profile),
-		  "username" =: username profile,
+                  "username" =: username profile,
                   "first_name" =: firstName profile,
                   "middle_name" =: middleName profile,
                   "last_name" =: lastName profile,
                   "current_city" =: currentCity profile,
+                  "search_terms" =: searchTerms profile,
                   "friends" =: (fmap toObjectId $ friends profile),
                   "incoming_friend_requests" =: (fmap toObjectId $ incomingFriendRequests profile),
                   "posts" =: posts profile]
@@ -119,6 +132,15 @@ findProfileBy key value = do
   dbProfile <- fetch (select [key =: value] "profiles")
   let (Just profile) = cast' (Doc dbProfile)
   return profile
+
+searchProfiles :: (MonadControlIO m, MonadIO m, Applicative m) => String -> Int -> Action m [FSProfile]
+searchProfiles query maxResults = do
+  let normalizedQuery = map soundexNARA $ splitWs query
+  let selector = map ("search_terms" =:) normalizedQuery
+  liftIO $ putStrLn $ show selector
+  cursor <- find $ select selector "profiles"
+  values <- nextN maxResults cursor
+  return $ map (fromJust . cast' . Doc) values
 
 saveProfile :: (MonadIO m, Applicative m) => FSProfile -> Action m FSProfile
 saveProfile profile
@@ -207,6 +229,6 @@ server = runIOE $ connect $ host "127.0.0.1"
 
 run act = unsafePerformIO $ do
   pipe <- server
-  (Right profiles) <- access pipe master "friendstar" act
-  return profiles
+  (Right result) <- access pipe master "friendstar" act
+  return result
 

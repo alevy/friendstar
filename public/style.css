@@ -88,6 +88,18 @@ ol#posts li div.post_details {
   text-align: right;
 }
 
+ol.results {
+  list-style-type: none;
+  padding-left: 0px;
+}
+
+ol.results li {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
 form {
   width: 400px;
 }
