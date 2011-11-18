@@ -11,7 +11,10 @@
   <h2>Friends</h2>
   <ol>
     {{#friends}}
-    <li>{{firstName}} {{lastName}}</li>
+    <li><a href="/profiles/{{username}}">{{firstName}} {{lastName}}</a></li>
+    {{/friends}}
+    {{^friends}}
+    {{firstName}}'s has no friends or they are private.
     {{/friends}}
   </ol>
 </div>

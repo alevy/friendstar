@@ -174,13 +174,13 @@ requestFriendship fromUser toUser = do
 -- Test if a friend request already exists
 friendshipRequestExists :: FSProfile -> FSProfile -> Bool
 friendshipRequestExists myProfile friendProfile
-  | isJust myProfileId = do
-    elem (fromJust myProfileId) friendRequests
+  | isJust friendProfileId = do
+    elem (fromJust friendProfileId) friendRequests
   | otherwise = do
     False
     -- Need force this to error out in a rational way but this is a safe bet.
-  where friendRequests = incomingFriendRequests friendProfile
-        myProfileId = profileId myProfile
+  where friendRequests = incomingFriendRequests myProfile
+        friendProfileId = profileId friendProfile
 
 -- Accept a friend request
 acceptFriendship :: (MonadIO m) => FSObjectId -> FSObjectId -> Action m FSObjectId
@@ -198,6 +198,7 @@ removeFriendship :: (MonadIO m, Applicative m) => FSObjectId -> FSObjectId -> Ac
 removeFriendship myObjId friendObjId = do
   modify (select ["_id" =: myId] "profiles") ["$pull" =: ["incoming_friend_requests" =: friendId]]
   modify (select ["_id" =: myId] "profiles") ["$pull" =: ["friends" =: friendId]]
+  modify (select ["_id" =: friendId] "profiles") ["$pull" =: ["friends" =: myId]]
   return friendObjId
   where myId = toObjectId myObjId
         friendId = toObjectId friendObjId
