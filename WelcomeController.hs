@@ -11,6 +11,5 @@ data WelcomeController = WelcomeController
 instance RestController WelcomeController where
 
   restIndex self _ = do
-    username <- usernameFromSession
-    let context = contextFromMUsername username
+    context <- contextFromMUsername `fmap` usernameFromSession
     renderTemplate "views/welcome/index.html" $ context

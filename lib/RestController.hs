@@ -52,6 +52,9 @@ instance Monad m => Monad (RestControllerContainer t m) where
                                      let (result, req', resp') = runRest controller req resp
                                      in seq result $ runRest (next result) req' resp'
 
+instance Monad m => Functor (RestControllerContainer t m) where
+  f `fmap` a = a >>= return . f
+
 instance MonadIO m => MonadIO (RestControllerContainer t m) where
   liftIO x = RestControllerContainer $ \req resp -> (result, req, resp)
     where result = unsafePerformIO x
@@ -105,7 +108,7 @@ addGeneric :: (Data a) => S -> a -> MuContext IO -> MuContext IO
 addGeneric name var context = check
   where check x | x == name = MuBool True
                 | (prefix x) == name = varCtx (postfix x)
-                | otherwise = context name
+                | otherwise = context x
         prefix x = S.pack $ takeWhile (/= '.') $ S.unpack x
         postfix x = S.pack $ tail $ dropWhile (/= '.') $ S.unpack x
         varCtx = mkGenericContext var
