@@ -26,17 +26,18 @@ instance RestController ProfilesController where
   restShow self user _ = do
     context <- contextFromMUsername `fmap` usernameFromSession
     let profile = run $ findProfileByUsername user
-    renderTemplate "views/profiles/show.html" $ addVar "profile" (123::Integer) $ context
+    renderTemplate "views/profiles/show.html" $ addGeneric "profile" profile $ context
   
   restEdit self user _ = do
+    context <- contextFromMUsername `fmap` usernameFromSession
     let profile = run $ findProfileByUsername user
-    renderTemplate "views/profiles/edit.html" $ mkGenericContext profile
+    renderTemplate "views/profiles/edit.html" $ addGeneric "profile" profile $ context
   
   restCreate self params = do
-    req <- getHttpReq
     let profile = profileFromMap $ paramMap params "profile"
-    let profile = run $ saveProfile profile
-    renderTemplate "views/thankyou.html" $ mkGenericContext profile
+    return $ run $ saveProfile profile
+    redirectTo $ "/profiles/" ++ (username profile)
+    setSession (username profile)
   
   restUpdate self user params = do
     req <- getHttpReq
@@ -45,6 +46,5 @@ instance RestController ProfilesController where
     let profile = (profileFromMap p)
                       { profileId = profileId currentProfile,
                         username = username currentProfile }
-    u <- liftIO $ putStrLn $ show params
-    let profile = run $ saveProfile profile
-    redirectTo ("/profiles/" ++ (username profile))
+    let profile' = run $ saveProfile profile
+    redirectTo ("/profiles/" ++ (username profile'))
