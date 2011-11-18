@@ -54,10 +54,11 @@ instance RestController FriendsController where
 
   -- Remove a friend or request
   restDestroy self user _ = do
+    return $ unsafePerformIO $ putStrLn "Destroy"
     mUser <- usernameFromSession
     let profile = run $ findProfileByUsername $ fromJust mUser
     let friendProfile = run $ findProfileByUsername user
-    let deletedUser = run $ removeFriendship (fromJust $ profileId profile) (fromJust $ profileId friendProfile)
+    return $ run $ removeFriendship (fromJust $ profileId profile) (fromJust $ profileId friendProfile)
     redirectTo "/friends/"
 
   -- Friend request form
