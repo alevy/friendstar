@@ -10,13 +10,15 @@
 <body>
 <header>
   <hgroup>
-    <h1>FriendStar</h1>
+    <h1><a href="/">FriendStar</a></h1>
     <h2>a social network for people with thoughts</h2>
   </hgroup>
   <nav>
     <ul>
       {{#current_user}}
-      <li>Hi {{current_user.firstName}}! <a href="/sessions/destroy" data-method="post">Logout</a></li>
+      <li><a href="/profiles/{{current_user.username}}">{{current_user.firstName}}</a></li>
+      <li><a href="/sessions/destroy" data-method="post">Logout</a></li>
+      <li><a href="/profiles/edit/{{current_user.username}}">Edit Profile</a></li>
       {{/current_user}}
     </ul>
   </nav>

@@ -1,6 +1,8 @@
+@import url(http://fonts.googleapis.com/css?family=Chivo:900);
+
 body {
-  font-family: verdana, arial, helvetica, sans-serif;
-  font-size: 13px;
+  font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+  font-size: 11px;
   line-height: 18px;
   max-width: 700px;
   margin: 0 auto;
@@ -9,8 +11,8 @@ body {
 header {
   padding: 3px;
   padding-bottom: 10px;
-  color: #ffffef;
-  background-color: #0066ff;
+  color: #fff;
+  background-color: #3b5998;
 }
 
 hgroup {
@@ -19,11 +21,23 @@ hgroup {
 }
 
 header h1 {
+  font-family: "Chivo", sans-serif;
   font-size: 40px;
 }
 
+header h1 a {
+  color: white;
+  text-decoration: none;
+}
+
 header h2 {
-  font-size: 15px;
+  font-family: "Helvetica", verdana, arial, sans-serif;
+  font-size: 20px;
+}
+
+header nav a {
+  color: #d8dfea;
+  text-decoration: none;
 }
 
 header nav {
@@ -33,12 +47,18 @@ header nav  ul {
   list-style-type: none;
   padding-left: 10px;
 }
+header nav ul li {
+  margin-left: 3px;
+  margin-right: 3px;
+  font-weight: bold;
+  display: inline-block;
+}
 
 div#content {
   clear: both;
 }
 
-form#new_profile_form {
+form {
   width: 400px;
 }
 
@@ -46,14 +66,18 @@ form div.field label {
   display: block;
   float: left;
   width: 100px;
-  text-align: right;
 }
 
 form div.field input {
   display: block;
+  width: 100%;
+  height: 25px;
+}
+
+form div.field textarea {
+  display: block;
   width: 250px;
   height: 25px;
-  text-align: right;
 }
 
 form input[type="submit"] {

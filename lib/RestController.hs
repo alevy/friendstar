@@ -108,7 +108,7 @@ addGeneric :: (Data a) => S -> a -> MuContext IO -> MuContext IO
 addGeneric name var context = check
   where check x | x == name = MuBool True
                 | (prefix x) == name = varCtx (postfix x)
-                | otherwise = context name
+                | otherwise = context x
         prefix x = S.pack $ takeWhile (/= '.') $ S.unpack x
         postfix x = S.pack $ tail $ dropWhile (/= '.') $ S.unpack x
         varCtx = mkGenericContext var

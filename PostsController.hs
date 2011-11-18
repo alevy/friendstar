@@ -34,5 +34,5 @@ instance RestController PostController where
                         postTimestamp = now,
                         postText = T.pack $ L.unpack $ postMap ! "text" }
     return $ run $ postToProfile post $ fromJust $ profileId user
-    render "text/html" $ L.pack $ show post
+    redirectTo $ "/profiles/" ++ (username user)
 
