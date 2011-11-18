@@ -54,6 +54,17 @@ header nav ul li {
   display: inline-block;
 }
 
+header form#search_form {
+  width: 95%;
+  clear: both;
+  text-align: right;
+  padding-right: 100px;
+}
+
+header form#search_form input[type="search"] {
+  width: 200px;
+}
+
 div#content {
   clear: both;
 }

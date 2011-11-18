@@ -19,10 +19,13 @@
       <li><a href="/profiles/{{current_user.username}}">{{current_user.firstName}}</a></li>
       <li><a href="/friends/">Friends</a></li>
       <li><a href="/profiles/edit/{{current_user.username}}">Edit Profile</a></li>
-      <li><a href="/sessions/destroy" data-method="post">Logout</a></li>
+      <li><a href="/sessions/destroy/{{current_user.username}}" data-method="post">Logout</a></li>
       {{/current_user}}
     </ul>
   </nav>
-  <div style="clear:both"></div>
+  <form action="/search/" method="POST" id="search_form">
+    <label for"search_query">Search:</label>
+    <input type="search" id="search_query" name="search[query]">
+  </form>
 </header>
 <div id="content">
