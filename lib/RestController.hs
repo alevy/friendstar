@@ -64,7 +64,7 @@ routeRestController controller = mconcat routes
   where routes = [routeTop $ routeMethod "GET" $ routeFn (_restNoVar controller restIndex),
                   routeMethod "GET" $ routeName "new" $ routeFn (_restNoVar controller restNew),
                   routeMethod "GET" $ routeName "edit" $ routeVar $ routeFn (_restWithVar controller restEdit),
-                  routeMethod "POST" $ routeName "destroy" $ routeFn (_restWithVar controller restDestroy),
+                  routeMethod "POST" $ routeName "destroy" $ routeVar $ routeFn (_restWithVar controller restDestroy),
                   routeMethod "GET" $ routeVar $ routeFn (_restWithVar controller restShow),
                   routeTop $ routeMethod "POST" $ routeFn (_restNoVar controller restCreate),
                   routeMethod "POST" $ routeVar $ routeFn (_restWithVar controller restUpdate)]
