@@ -150,6 +150,15 @@ postToProfile post profileId = do
   where (Doc post_doc) = val post
         objId = toObjectId profileId
 
+data FSPostWithAuthor = FSPostWithAuthor {
+  post :: FSPost, author :: FSProfile
+  } deriving (Show, Data, Typeable)
+
+postWithAuthor :: (MonadIO m, Applicative m) => FSPost -> Action m FSPostWithAuthor
+postWithAuthor post = do
+  author <- findProfile $ postAuthorId post
+  return $ FSPostWithAuthor post author
+
 {-
  - Friend List Manipulation
  -}

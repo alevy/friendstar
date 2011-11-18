@@ -7,7 +7,8 @@ import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.IterIO.Iter as I (run)
 import Data.IterIO.Inum
 import Data.IterIO.Http
-import Text.Hastache.Context
+import Data.Time.Clock
+import Text.Hastache
 
 import Application
 import Profile
@@ -26,7 +27,8 @@ instance RestController ProfilesController where
   restShow self user _ = do
     context <- contextFromMUsername `fmap` usernameFromSession
     let profile = run $ findProfileByUsername user
-    renderTemplate "views/profiles/show.html" $ addGeneric "profile" profile $ context
+    let profilePosts = map (run . postWithAuthor) $ take 10 $ posts profile
+    renderTemplate "views/profiles/show.html" $ addGenericList "posts" profilePosts $ addGeneric "profile" profile $ context
   
   restEdit self user _ = do
     context <- contextFromMUsername `fmap` usernameFromSession

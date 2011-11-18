@@ -58,6 +58,25 @@ div#content {
   clear: both;
 }
 
+ol#posts {
+  list-style-type: none;
+  padding-left: 0px;
+}
+
+ol#posts li {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+ol#posts li div.post_text {
+  font-size: 14px;
+}
+
+ol#posts li div.post_details {
+  text-align: right;
+}
+
 form {
   width: 400px;
 }
@@ -76,8 +95,8 @@ form div.field input {
 
 form div.field textarea {
   display: block;
-  width: 250px;
-  height: 25px;
+  width: 350px;
+  height: 75px;
 }
 
 form input[type="submit"] {

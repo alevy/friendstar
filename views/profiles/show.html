@@ -10,10 +10,12 @@
     <div class="field"><textarea name="post[text]"></textarea></div>
     <div><input type="submit" value="Post"/></div>
   </form>
-  <ol>
-    {{#profile.posts}}
-    <li>{{postText}}</li>
-    {{/profile.posts}}
+  <ol id="posts">
+    {{#posts}}
+    <li>
+      {{> posts/post.html }}
+    </li>
+    {{/posts}}
   </ol>
   {{^profile.posts}}
   {{/profile.posts}}
