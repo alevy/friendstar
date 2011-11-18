@@ -4,7 +4,7 @@ body {
   font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
   font-size: 11px;
   line-height: 18px;
-  max-width: 700px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -97,6 +97,7 @@ form div.field textarea {
   display: block;
   width: 350px;
   height: 75px;
+  resize: none;
 }
 
 form input[type="submit"] {
