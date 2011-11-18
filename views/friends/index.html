@@ -3,7 +3,7 @@
   <h2>Friend Requests</h2>
   <ol>
     {{#friendRequests}}
-    <li><a href="/profile/{{username}}">{{firstName}} {{lastName}}</a></li> <a 
+    <li><a href="/profiles/{{username}}">{{firstName}} {{lastName}}</a></li> <a 
 	href="/friends/{{username}}" data-method="post">Accept</a>
     {{/friendRequests}}
     {{^friendRequests}}

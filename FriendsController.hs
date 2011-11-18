@@ -13,6 +13,7 @@ import Data.IterIO.Http
 import Text.Hastache
 import Text.Hastache.Context
 
+import Application
 import RestController
 import RoutedServer
 import Profile
@@ -23,17 +24,19 @@ instance RestController FriendsController where
   -- List friends and friend requests
   restIndex self _ = do
     mUser <- usernameFromSession
+    context <- contextFromMUsername `fmap` usernameFromSession
     let profile = run $ findProfileByUsername $ fromJust mUser
     let friendList = run $ mapM (findProfile) (friends profile)
     let friendReqList = run $ mapM (findProfile) (incomingFriendRequests profile)
-    let expandedProfile = addVar "firstName" (firstName profile) $ addVar "lastName" (lastName profile) $ addGenericList "friends" friendList $ addGenericList "friendRequests" friendReqList $ emptyContext
+    let expandedProfile = addVar "firstName" (firstName profile) $ addVar "lastName" (lastName profile) $ addGenericList "friends" friendList $ addGenericList "friendRequests" friendReqList $ context
     renderTemplate "views/friends/index.html" $ expandedProfile
 
   -- List friends of a user
   restShow self user _ = do
+    context <- contextFromMUsername `fmap` usernameFromSession
     let profile = run $ findProfileByUsername $ user
     let friendList = run $ mapM (findProfile) (friends profile)
-    let expandedProfile = addVar "firstName" (firstName profile) $ addVar "lastName" (lastName profile) $ addGenericList "friends" friendList $ emptyContext
+    let expandedProfile = addVar "firstName" (firstName profile) $ addVar "lastName" (lastName profile) $ addGenericList "friends" friendList $ context
     renderTemplate "views/friends/show.html" $ expandedProfile
 
   -- Accept friend request
@@ -45,8 +48,7 @@ instance RestController FriendsController where
       return $ run $
         acceptFriendship (fromJust $ profileId profile)
                         (fromJust $ profileId friendProfile)
-      --redirectTo "/friends/"
-      render "text/html" $ L.pack $ show (username friendProfile)
+      redirectTo "/friends/"
     else
       render "text/html" "Friendship request not present!"
 
@@ -56,8 +58,7 @@ instance RestController FriendsController where
     let profile = run $ findProfileByUsername $ fromJust mUser
     let friendProfile = run $ findProfileByUsername user
     let deletedUser = run $ removeFriendship (fromJust $ profileId profile) (fromJust $ profileId friendProfile)
-    --redirectTo "/friends/"
-    render "text/html" $ L.pack $ show deletedUser
+    redirectTo "/friends/"
 
   -- Friend request form
   restNew self _ = do
@@ -70,5 +71,5 @@ instance RestController FriendsController where
     let reqUser = S.pack $ L.unpack $ fromJust $ lookup "friend[username]" params
     let fUser = run $ findProfileByUsername $ reqUser
     return $ run $ requestFriendship (fromJust $ profileId user) (fromJust $ profileId fUser)
-    render "text/html" $ L.pack $ show (username fUser)
+    redirectTo "/friends/"
 
