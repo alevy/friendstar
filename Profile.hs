@@ -25,13 +25,7 @@ import Text.PhoneticCode.Soundex
 import Text.Regex
 import System.IO.Unsafe
 
-type FSObjectId = S.ByteString
-
-fromObjectId :: ObjectId -> FSObjectId
-fromObjectId id = S.pack $ show id
-
-toObjectId :: FSObjectId -> ObjectId
-toObjectId id = read $ S.unpack id
+import FSDB
 
 data FSPost = FSPost {
   postAuthorId :: FSObjectId,
