@@ -31,7 +31,7 @@ instance RestController SessionsController where
   -- Creates the authentication token and redirects to the user profile page.
   restCreate self params = do
     req <- getHttpReq
-    let username = L.unpack $ fromJust $ Prelude.lookup "session[username]" params
+    let username = L.unpack $ fst $ fromJust $ Prelude.lookup "session[username]" params
     -- TODO: INSECURE!!! For now just store username because ClientSession 
     -- leaves a trailing `=' which is invalid.
     redirectTo ("/profiles/" ++ username)

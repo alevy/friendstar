@@ -106,9 +106,9 @@ getTemplate path = unsafePerformIO $ do
     file <- openFile (sanitizePath path) ReadMode
     hGetContents file
 
-paramMap :: [(S.ByteString, L.ByteString)] -> String -> Map String L.ByteString
+paramMap :: [(S.ByteString, (L.ByteString, [(S.ByteString, S.ByteString)]))] -> String -> Map String L.ByteString
 paramMap prms objName = foldl handle empty prms
   where handle accm (k, v) = do
-          maybe (accm) (\x -> insert (head x) v accm) (matchRegex rg $ S.unpack k)
+          maybe (accm) (\x -> insert (head x) (fst $ v) accm) (matchRegex rg $ S.unpack k)
         rg = mkRegex $ objName ++ "\\[([^]]+)\\]"
 

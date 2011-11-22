@@ -25,7 +25,7 @@
   </nav>
   <form action="/search/" method="POST" id="search_form">
     <label for"search_query">Search:</label>
-    <input type="search" id="search_query" name="search[query]" value="{{query}}">
+    <input type="search" id="search_query" name="search[query]" value="{{#query?}}{{query}}{{/query?}}">
   </form>
 </header>
 <div id="content">

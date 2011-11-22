@@ -8,6 +8,7 @@ module RestController ( RestController,
                         restCreate,
                         restUpdate,
                         restDestroy,
+                        Params,
                         routeRestController,
                         setSession,
                         destroySession,
@@ -139,51 +140,53 @@ usernameFromSession = RestControllerContainer $ \req resp -> (_getUser req, req,
 getHttpReq :: RestControllerContainer t m (HttpReq t)
 getHttpReq = RestControllerContainer $ \req resp -> (req, req, resp)
 
+type Params = [(S, (L, [(S,S)]))]
+
 class RestController a where
-  restIndex :: (MonadIO m, Monad m) => a -> [(S, L)] -> RestControllerContainer t m ()
+  restIndex :: (MonadIO m, Monad m) => a -> Params -> RestControllerContainer t m ()
   restIndex _ _ = respond404
 
-  restShow :: (MonadIO m, Monad m) => a -> S.ByteString -> [(S, L)] -> RestControllerContainer t m ()
+  restShow :: (MonadIO m, Monad m) => a -> S.ByteString -> Params -> RestControllerContainer t m ()
   restShow _ _ _ = respond404
 
-  restEdit :: (MonadIO m, Monad m) => a -> S.ByteString -> [(S, L)] -> RestControllerContainer t m ()
+  restEdit :: (MonadIO m, Monad m) => a -> S.ByteString -> Params -> RestControllerContainer t m ()
   restEdit _ _ _ = respond404
 
-  restNew :: (MonadIO m, Monad m) => a -> [(S, L)] -> RestControllerContainer t m ()
+  restNew :: (MonadIO m, Monad m) => a -> Params -> RestControllerContainer t m ()
   restNew _ _ = respond404
 
-  restCreate :: (MonadIO m, Monad m) => a -> [(S, L)] -> RestControllerContainer t m ()
+  restCreate :: (MonadIO m, Monad m) => a -> Params -> RestControllerContainer t m ()
   restCreate _ _ = respond404
 
-  restUpdate :: (MonadIO m, Monad m) => a -> S.ByteString -> [(S, L)] -> RestControllerContainer t m ()
+  restUpdate :: (MonadIO m, Monad m) => a -> S.ByteString -> Params -> RestControllerContainer t m ()
   restUpdate _ _ _ = respond404
 
-  restDestroy :: (MonadIO m, Monad m) => a -> S.ByteString -> [(S, L)] -> RestControllerContainer t m ()
+  restDestroy :: (MonadIO m, Monad m) => a -> S.ByteString -> Params -> RestControllerContainer t m ()
   restDestroy _ _ _ = respond404
 
   _restNoVar :: (MonadIO t, Monad m) => a
-                -> (a -> [(S, L)] -> RestControllerContainer s m ())
+                -> (a -> Params -> RestControllerContainer s m ())
                 -> HttpReq s
                 -> Iter L t (HttpResp m)
   _restNoVar self handler req = do
     params <- paramList req
-    let (_, _, response) = runRest (handler self params) req $ mkHttpHead $ stat200
+    let (_, _, response) = runRest (handler self params) req $ mkHttpHead stat200
     liftIO $ putStrLn $ show response
     return $ response
 
   _restWithVar :: (MonadIO t, Monad m) => a
-                 -> (a -> S.ByteString -> [(S, L)] -> RestControllerContainer s m ())
+                 -> (a -> S.ByteString -> Params -> RestControllerContainer s m ())
                  -> HttpReq s
                  -> Iter L t (HttpResp m)
   _restWithVar self handler req = do
     params <- paramList req
     let arg = head $ reqPathParams req
-    let (_, _, response) = runRest (handler self arg params) req $ mkHttpHead $ stat200
+    let (_, _, response) = runRest (handler self arg params) req $ mkHttpHead stat200
     liftIO $ putStrLn $ show response
     return $ response
 
-paramList :: (MonadIO t) => HttpReq s -> Iter L t [(S, L)]
+paramList :: (MonadIO t) => HttpReq s -> Iter L t Params
 paramList req = foldForm req handle []
   where handle accm field = do
           val <- pureI
-          return $ (ffName field, val):accm
+          return $ (ffName field, (val, ffHeaders field)):accm

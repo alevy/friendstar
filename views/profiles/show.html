@@ -1,5 +1,8 @@
 {{> header.html}}
 <h2>{{profile.firstName}} {{profile.lastName}}</h2>
+<div id="profile_pic">
+  {{>profile_pics/show.html}}
+</div>
 <div id="details">
   Current City: {{profile.currentCity}}
 </div>

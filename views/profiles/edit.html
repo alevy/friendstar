@@ -1,5 +1,9 @@
 {{> header.html}}
 <h2>Edit My Profile</h2>
+  <div id="profile_pic">
+    <img src="/profile_pics/{{profile.profilePicId}}"/><br/>
+    <a href="/profile_pics/new">Upload new profile picture</a>
+  </div>
   <form action="/profiles/{{profile.username}}" method="POST" 
       id="edit_profile_form">
     <p>

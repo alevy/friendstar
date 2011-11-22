@@ -13,6 +13,7 @@ import Data.Bool
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Data
+import qualified Data.List as List
 import Data.Map hiding (map)
 import qualified Data.Text as T
 import Data.Time.Clock
@@ -33,8 +34,12 @@ data FSPost = FSPost {
   postText :: T.Text
 } deriving (Show, Eq, Data, Typeable)
 
+instance Ord FSPost where
+  compare post1 post2 = compare (postTimestamp post2) (postTimestamp post1)
+
 data FSProfile = FSProfile {
   profileId :: Maybe FSObjectId,
+  profilePicId :: Maybe FSObjectId,
   username :: String,
   firstName :: String,
   middleName :: Maybe String,
@@ -47,7 +52,7 @@ data FSProfile = FSProfile {
 
 defaultFSProfile :: FSProfile
 defaultFSProfile = FSProfile {
-  profileId = Nothing, username = "", firstName = "", middleName = Nothing,
+  profileId = Nothing, profilePicId = Nothing, username = "", firstName = "", middleName = Nothing,
   lastName = "", currentCity = Nothing, friends = [],
   incomingFriendRequests = [], posts = []
 }
@@ -71,6 +76,7 @@ searchTerms profile = map soundexNARA terms
 
 instance Val FSProfile where
   val profile = Doc [ "_id" =: (fmap toObjectId $ profileId profile),
+                  "profile_pic_id" =: (fmap toObjectId $ profilePicId profile),
                   "username" =: username profile,
                   "first_name" =: firstName profile,
                   "middle_name" =: middleName profile,
@@ -83,6 +89,7 @@ instance Val FSProfile where
 
   cast' (Doc doc) = Just defaultFSProfile {
     profileId = fmap fromObjectId $ at "_id" doc,
+    profilePicId = fmap fromObjectId $ Data.Bson.lookup "profile_pic_id" doc,
     username = at "username" doc,
     firstName = at "first_name" doc,
     middleName = Data.Bson.lookup "middle_name" doc,
@@ -90,7 +97,7 @@ instance Val FSProfile where
     currentCity = Data.Bson.lookup "current_city" doc,
     friends = fmap fromObjectId $ atOrDefault "friends" doc [],
     incomingFriendRequests = fmap fromObjectId $ atOrDefault "incoming_friend_requests" doc [],
-    posts = fmap toPost $ atOrDefault "posts" doc []}
+    posts = List.sort $ fmap toPost $ atOrDefault "posts" doc []}
     where toPost post = fromJust $ cast' post
 
 

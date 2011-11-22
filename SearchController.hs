@@ -15,7 +15,7 @@ instance RestController SearchController where
   -- Searches for users by username, name and city
   restCreate self params = do
     context <- contextFromMUsername `fmap` usernameFromSession
-    let query = L.unpack $ fromJust $ lookup "search[query]" params
+    let query = L.unpack $ fst $ fromJust $ lookup "search[query]" params
     let profiles = run $ searchProfiles query 10
     renderTemplate "views/search/search.html" $ addVar "query" query $
       addGenericList "profiles" profiles $ context

@@ -1,0 +1,10 @@
+{{> header.html}}
+<h2>Upload Profile Picture</h2>
+  <form action="/profile_pics/" method="POST"
+      id="new_profile_pic_form" enctype="multipart/form-data">
+    <p>
+      <input type="file" name="profile_pic[image]" id="profile_pic_image"/>
+      <input type="submit" value="Upload"/>
+    </p>
+  </form>
+{{> footer.html}}

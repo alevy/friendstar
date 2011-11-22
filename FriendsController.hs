@@ -68,7 +68,7 @@ instance RestController FriendsController where
   restCreate self params = do
     mUser <- usernameFromSession
     let user = run $ findProfileByUsername $ fromJust mUser
-    let reqUser = S.pack $ L.unpack $ fromJust $ lookup "friend[username]" params
+    let reqUser = S.pack $ L.unpack $ fst $ fromJust $ lookup "friend[username]" params
     let fUser = run $ findProfileByUsername $ reqUser
     return $ run $ requestFriendship (fromJust $ profileId user) (fromJust $ profileId fUser)
     redirectTo "/friends/"
