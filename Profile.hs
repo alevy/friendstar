@@ -26,6 +26,9 @@ import Text.PhoneticCode.Soundex
 import Text.Regex
 import System.IO.Unsafe
 
+import qualified LIO.TCB as LIO
+import qualified LIO.DCLabel as DC
+
 import FSDB
 
 data FSPost = FSPost {
@@ -117,6 +120,11 @@ instance Val FSPost where
 {-
  - Profile Operations
  -}
+
+lfindProfile :: MonadIO m => FSObjectId -> DC.DC (Action m FSProfile)
+lfindProfile id = do
+  let objId = toObjectId id
+  LIO.evaluate $ findProfileBy "_id" objId
 
 findProfile :: MonadIO m => FSObjectId -> Action m FSProfile
 findProfile id = do
@@ -227,6 +235,15 @@ removeFriendship myObjId friendObjId = do
         friendId = toObjectId friendObjId
 
 server = runIOE $ connect $ host "127.0.0.1"
+
+lrun :: DC.DC (Action IO a) -> DC.DC a
+lrun lact = do
+  let pipe = unsafePerformIO server
+  do
+    (act, state) <- DC.evalDC $ lact
+    (Right result) <- access pipe master "friendstar" act
+    return result
+
 
 run act = unsafePerformIO $ do
   pipe <- server
