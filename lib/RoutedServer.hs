@@ -1,28 +1,20 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module RoutedServer (mkHttpServer,
-                     runHttpServer,
-                     mimeMap,
-                     getTemplate,
-                     paramMap,
-                     module Data.IterIO.Http,
-                     module Data.IterIO.HttpRoute) where
+module RoutedServer (
+  runHttpServer,
+  mimeMap,
+  paramMap
+) where
 
-import Prelude hiding (catch, div)
-import Control.Applicative ((<$>))
-import Control.Monad
 import Control.Concurrent
-import Control.Exception
-import Control.Monad.Trans
+import Control.Monad
+import Data.ByteString.Base64
 import qualified Data.ByteString.Char8 as S
-import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Map
-import Data.Monoid
+
 import qualified Network.Socket as Net
-import qualified OpenSSL.Session as SSL
 import System.IO
-import System.IO.Unsafe
 import System.Posix
 import Text.Regex
 
@@ -30,14 +22,15 @@ import Data.IterIO
 import Data.IterIO.Iter
 import Data.IterIO.Http
 import Data.IterIO.HttpRoute
-import Data.IterIO.SSL
+
+import qualified LIO.TCB as LIO
+import qualified LIO.LIO as LIO
+import LIO.DCLabel
+
+import System.IO.Unsafe
+
 
 type L = L.ByteString
-
-data HttpServer = HttpServer {
-      hsListenSock :: !Net.Socket
-    , hsSslCtx :: !(Maybe SSL.SSLContext)
-    }
 
 myListen :: Net.PortNumber -> IO Net.Socket
 myListen pn = do
@@ -47,44 +40,72 @@ myListen pn = do
   Net.listen sock Net.maxListenQueue
   return sock
 
-httpAccept :: HttpServer -> IO (Net.SockAddr, Iter L IO (), Onum L IO a)
-httpAccept hs = do
-  (s, addr) <- Net.accept $ hsListenSock hs
-  (iter, enum) <- maybe (mkInsecure s) (mkSecure s) (hsSslCtx hs)
-  return (addr, iter, enum)
+httpAccept :: Net.Socket -> IO (Iter L IO (), Onum L IO a)
+httpAccept sock = do
+  (s, _) <- Net.accept sock
+  (iter, enum) <- mkInsecure s
+  return (iter, enum)
   where
     mkInsecure s = do
       h <- Net.socketToHandle s ReadWriteMode
       hSetBuffering h NoBuffering
-      return (handleI h, enumHandle h)-- `inumFinally` liftIO (hClose h))
-    mkSecure s ctx = iterSSL ctx s True `catch` \e@(SomeException _) -> do
-                       hPutStrLn stderr (show e)
-                       Net.sClose s
-                       return (nullI, inumNull)
-
-mkHttpServer :: Net.PortNumber -> Maybe SSL.SSLContext -> IO HttpServer
-mkHttpServer port mctx = do
-  sock <- myListen port
-  return $ HttpServer { hsListenSock = sock
-                      , hsSslCtx = mctx
-                      }
+      return (handleI h, enumHandle h)
 
 runHttpServer :: Net.PortNumber
-              -> [HttpRoute IO ()]
+              -> HttpRequestHandler DC ()
               -> IO ()
-runHttpServer port routing = do
-  server <- mkHttpServer port Nothing
+runHttpServer port lrh = do
+  sock <- myListen port
   forever $ do
-    (addr, iter, enum) <- httpAccept server
-    _ <- forkIO $ simpleServer iter enum routing
+    (iter, enum) <- httpAccept sock
+    _ <- forkIO $ simpleServer iter enum lrh
     return ()
 
-simpleServer :: MonadIO m => Iter L.ByteString m ()  -- Output to web browser
-            -> Onum L.ByteString m ()  -- Input from web browser
-            -> [HttpRoute m ()]
-            -> m ()
-simpleServer iter enum routes = enum |$ inumHttpServer server .| iter
-   where server = ioHttpServer $ runHttpRoute $ mconcat routes
+iterIOtoIterDC :: ChunkData a => Iter a IO b -> Iter a DC b
+iterIOtoIterDC iterIn = Iter $ \c -> go $ (runIter iterIn) c
+  where go (Done a (Chunk b c)) = Done a (Chunk b c)
+        go (IterM m) = do
+          let m1 = fmap go $ LIO.ioTCB m
+          IterM m1
+        go (IterF next) = IterF $ iterIOtoIterDC next
+        go (Fail itf ma mb) = Fail itf ma mb
+        go x = seq (unsafePerformIO $ putStrLn $ "BLARG!!!" ++ (show x)) undefined -- TODO: complete implementation
+
+onumIOtoOnumDC :: Onum L IO L -> Onum L DC a
+onumIOtoOnumDC inO = mkInum $ iterIOtoIterDC (inO .|$ dataI)
+
+simpleServer :: Iter L IO ()
+              -> Onum L IO L
+              -> HttpRequestHandler DC ()
+              -> IO ()
+simpleServer iter enum lrh = do
+  let dcEnum = onumIOtoOnumDC enum
+  let dcIter = iterIOtoIterDC iter
+  (result, _) <- evalDC $ dcEnum |$ secureInumHttpServer lrh .| dcIter
+  return result
+
+userFromAuthCode :: Maybe S.ByteString -> Maybe String
+userFromAuthCode mAuthCode = fmap extractUser mAuthCode
+  where extractUser b64u = S.unpack $ S.takeWhile (/= ':') $ decodeLenient b64u
+
+secureInumHttpServer :: HttpRequestHandler DC () -> Inum L L DC ()
+secureInumHttpServer lrh = mkInumM $
+  do
+    req <- httpReqI
+    case userFromAuthCode (fmap (S.drop 6) $ Prelude.lookup "authorization" (reqHeaders req)) of
+      Just user -> do
+        let l = newDC user user
+        LIO.liftLIO $ LIO.lowerClr l
+        -- let x = do
+        --           LIO.lowerClr l
+        --           run $ lrh req
+        resp <- liftI $ inumHttpBody req .| lrh req
+        irun $ enumHttpResp resp Nothing
+      Nothing -> do
+        let authRequired = mkHttpHead stat401
+        irun $ enumHttpResp (authRequired
+          { respHeaders = "WWW-Authenticate: Basic realm=\"Hails\"":(respHeaders authRequired)})
+          Nothing
 
 mimeMap :: String -> S.ByteString
 mimeMap = unsafePerformIO $ do
@@ -97,18 +118,8 @@ mimeMap = unsafePerformIO $ do
                                 if exist then return h else findMimeTypes t
        findMimeTypes []    = return "mime.types" -- cause error
 
---- Tentative
-sanitizePath :: FilePath -> FilePath
-sanitizePath path = path -- TODO!!
-
-getTemplate :: FilePath -> String
-getTemplate path = unsafePerformIO $ do
-    file <- openFile (sanitizePath path) ReadMode
-    hGetContents file
-
 paramMap :: [(S.ByteString, (L.ByteString, [(S.ByteString, S.ByteString)]))] -> String -> Map String L.ByteString
 paramMap prms objName = foldl handle empty prms
   where handle accm (k, v) = do
           maybe (accm) (\x -> insert (head x) (fst $ v) accm) (matchRegex rg $ S.unpack k)
         rg = mkRegex $ objName ++ "\\[([^]]+)\\]"
-

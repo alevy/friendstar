@@ -1,7 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import System.IO
 import Data.IterIO.Http
+import Data.IterIO.HttpRoute
+import Data.Monoid
+
+import LIO.DCLabel
 
 import RestController
 import RoutedServer
@@ -16,9 +19,9 @@ import FriendsController
 
 main :: IO ()
 main = do
-  runHttpServer 8000 routing
+  runHttpServer 8000 $ runHttpRoute $ mconcat routing
 
-routing :: [HttpRoute IO s]
+routing :: [HttpRoute DC s]
 routing = [ routeTop $ routeConst $ resp301 "/welcome",
                     routeName "welcome" $ routeRestController (WelcomeController),
                     routeName "search" $ routeRestController (SearchController),
@@ -26,8 +29,8 @@ routing = [ routeTop $ routeConst $ resp301 "/welcome",
                     routeName "posts" $ routeRestController (PostController),
                     routeName "profiles" $ routeRestController (ProfilesController),
                     routeName "profile_pics" $ routeRestController (ProfilePicsController),
-                    routeName "friends" $ routeRestController (FriendsController),
-                    routeFileSys mimeMap (dirRedir "/index.html") "public"
+                    routeName "friends" $ routeRestController (FriendsController)
+--                    routeFileSys mimeMap (dirRedir "/index.html") "public"
                   ]
 
 
