@@ -24,12 +24,14 @@ import Data.UString (u)
 import Database.MongoDB
 import Text.PhoneticCode.Soundex
 import Text.Regex
-import System.IO.Unsafe
 
 import qualified LIO.TCB as LIO
 import qualified LIO.DCLabel as DC
 
-import FSDB
+import FSDB hiding (run)
+import qualified FSDB as FSDB (run)
+
+run = FSDB.run
 
 data FSPost = FSPost {
   postAuthorId :: FSObjectId,
@@ -121,29 +123,24 @@ instance Val FSPost where
  - Profile Operations
  -}
 
-lfindProfile :: MonadIO m => FSObjectId -> DC.DC (Action m FSProfile)
-lfindProfile id = do
-  let objId = toObjectId id
-  LIO.evaluate $ findProfileBy "_id" objId
-
-findProfile :: MonadIO m => FSObjectId -> Action m FSProfile
+findProfile :: MonadIO m => FSObjectId -> FSDBQuery m FSProfile
 findProfile id = do
   let objId = toObjectId id
   findProfileBy "_id" objId
 
-findProfileByUsername :: MonadIO m => S.ByteString -> Action m FSProfile
+findProfileByUsername :: MonadIO m => S.ByteString -> FSDBQuery m FSProfile
 findProfileByUsername username = do
   let strUsername = S.unpack username
   findProfileBy "username" strUsername
 
-findProfileBy :: (MonadIO m, Val v) => Label -> v -> Action m FSProfile
-findProfileBy key value = do
+findProfileBy :: (MonadIO m, Val v) => Label -> v -> FSDBQuery m FSProfile
+findProfileBy key value = FSDBQueryC $ do
   dbProfile <- fetch (select [key =: value] "profiles")
   let (Just profile) = cast' (Doc dbProfile)
   return profile
 
-searchProfiles :: (MonadControlIO m, MonadIO m, Applicative m) => String -> Int -> Action m [FSProfile]
-searchProfiles query maxResults = do
+searchProfiles :: (MonadControlIO m, MonadIO m, Applicative m) => String -> Int -> FSDBQuery m [FSProfile]
+searchProfiles query maxResults = FSDBQueryC $ do
   let normalizedQuery = map soundexNARA $ splitWs query
   let selector = map ("search_terms" =:) normalizedQuery
   liftIO $ putStrLn $ show selector
@@ -151,12 +148,12 @@ searchProfiles query maxResults = do
   values <- nextN maxResults cursor
   return $ map (fromJust . cast' . Doc) values
 
-saveProfile :: (MonadIO m, Applicative m) => FSProfile -> Action m FSProfile
+saveProfile :: (MonadIO m, Applicative m) => FSProfile -> FSDBQuery m FSProfile
 saveProfile profile
-  | isJust (profileId profile) = do
+  | isJust (profileId profile) = FSDBQueryC $ do
       save "profiles" $ doc
       return profile
-  | otherwise = do
+  | otherwise = FSDBQueryC $ do
       save "profiles" $ exclude ["_id"] doc
       return profile
   where (Doc doc) = val profile
@@ -174,8 +171,8 @@ listProfiles _ = do
  -}
 
 -- Post a FSPost to a profile
-postToProfile :: (MonadIO m, Applicative m) => FSPost -> FSObjectId -> Action m FSPost
-postToProfile post profileId = do
+postToProfile :: (MonadIO m, Applicative m) => FSPost -> FSObjectId -> FSDBQuery m FSPost
+postToProfile post profileId = FSDBQueryC $ do
   modify (select ["_id" =: objId] "profiles") ["$push" =: ["posts" =: post_doc]]
   return post
   where (Doc post_doc) = val post
@@ -185,9 +182,10 @@ data FSPostWithAuthor = FSPostWithAuthor {
   post :: FSPost, author :: FSProfile
   } deriving (Show, Data, Typeable)
 
-postWithAuthor :: (MonadIO m, Applicative m) => FSPost -> Action m FSPostWithAuthor
-postWithAuthor post = do
-  author <- findProfile $ postAuthorId post
+postWithAuthor :: (MonadIO m, Applicative m) => FSPost -> FSDBQuery m FSPostWithAuthor
+postWithAuthor post = FSDBQueryC $ do
+  let (FSDBQueryC _author) = findProfile $ postAuthorId post
+  author <- _author
   return $ FSPostWithAuthor post author
 
 {-
@@ -195,8 +193,8 @@ postWithAuthor post = do
  -}
 
 -- Add friend request to the specified user profile
-requestFriendship :: (MonadIO m, Applicative m) => FSObjectId -> FSObjectId -> Action m FSObjectId
-requestFriendship fromUser toUser = do
+requestFriendship :: (MonadIO m, Applicative m) => FSObjectId -> FSObjectId -> FSDBQuery m FSObjectId
+requestFriendship fromUser toUser = FSDBQueryC $ do
   modify (select ["_id" =: toId] "profiles") ["$push" =: ["incoming_friend_requests" =: fromId]]
   return fromUser
   where fromId = toObjectId fromUser
@@ -214,8 +212,8 @@ friendshipRequestExists myProfile friendProfile
         friendProfileId = profileId friendProfile
 
 -- Accept a friend request
-acceptFriendship :: (MonadIO m) => FSObjectId -> FSObjectId -> Action m FSObjectId
-acceptFriendship myObjId friendObjId = do
+acceptFriendship :: (MonadIO m) => FSObjectId -> FSObjectId -> FSDBQuery m FSObjectId
+acceptFriendship myObjId friendObjId = FSDBQueryC $ do
   modify (select ["_id" =: myId] "profiles") ["$push" =: ["friends" =: friendId]]
   modify (select ["_id" =: friendId] "profiles") ["$push" =: ["friends" =: myId]]
   modify (select ["_id" =: myId] "profiles") ["$pull" =: ["incoming_friend_requests" =: friendId]]
@@ -225,8 +223,8 @@ acceptFriendship myObjId friendObjId = do
 
 -- Remove friend or friend request
 -- XXX: Probably we want to return an error on failure
-removeFriendship :: (MonadIO m, Applicative m) => FSObjectId -> FSObjectId -> Action m FSObjectId
-removeFriendship myObjId friendObjId = do
+removeFriendship :: (MonadIO m, Applicative m) => FSObjectId -> FSObjectId -> FSDBQuery m FSObjectId
+removeFriendship myObjId friendObjId = FSDBQueryC $ do
   modify (select ["_id" =: myId] "profiles") ["$pull" =: ["incoming_friend_requests" =: friendId]]
   modify (select ["_id" =: myId] "profiles") ["$pull" =: ["friends" =: friendId]]
   modify (select ["_id" =: friendId] "profiles") ["$pull" =: ["friends" =: myId]]
@@ -234,19 +232,4 @@ removeFriendship myObjId friendObjId = do
   where myId = toObjectId myObjId
         friendId = toObjectId friendObjId
 
-server = runIOE $ connect $ host "127.0.0.1"
-
-lrun :: DC.DC (Action IO a) -> DC.DC a
-lrun lact = do
-  let pipe = unsafePerformIO server
-  do
-    (act, state) <- DC.evalDC $ lact
-    (Right result) <- access pipe master "friendstar" act
-    return result
-
-
-run act = unsafePerformIO $ do
-  pipe <- server
-  (Right result) <- access pipe master "friendstar" act
-  return result
 

@@ -16,6 +16,8 @@ import RestController
 import RoutedServer
 import Profile
 
+import LIO.LIO (liftLIO)
+
 data PostController = PostController
 
 instance RestController PostController where
@@ -25,7 +27,7 @@ instance RestController PostController where
 
   restCreate self params = do
     mUser <- usernameFromSession
-    let user = run $ findProfileByUsername $ fromJust mUser
+    user <- run $ findProfileByUsername $ fromJust mUser
     let mProfileUsername = S.pack $ L.unpack $ fst $ fromJust $ lookup "profile[username]" params
     let profile = run $ findProfileByUsername mProfileUsername
     let postMap = paramMap params "post"

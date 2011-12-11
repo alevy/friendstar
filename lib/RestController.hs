@@ -25,6 +25,7 @@ module RestController ( RestController,
 
 import Control.Monad
 import Control.Monad.Trans
+import Control.Monad.Trans.State
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Data
@@ -42,24 +43,12 @@ import System.IO.Unsafe
 type L = L.ByteString
 type S = S.ByteString
 
-newtype RestControllerContainer t m a = RestControllerContainer
-                                          { runRest :: HttpReq t
-                                                      -> HttpResp m
-                                                      -> (a, HttpReq t, HttpResp m) }
+type RestControllerContainer t m a = StateT (HttpReq t, HttpResp m) m a
 
-instance Monad (RestControllerContainer t m) where
-  return x = RestControllerContainer $ \req resp -> (x, req, resp)
-
-  controller >>= next = RestControllerContainer $ \req resp-> 
-                                     let (result, req', resp') = runRest controller req resp
-                                     in seq result $ runRest (next result) req' resp'
-
-instance Functor (RestControllerContainer t m) where
-  f `fmap` a = a >>= return . f
-
-instance MonadIO (RestControllerContainer t m) where
-  liftIO x = RestControllerContainer $ \req resp -> (result, req, resp)
-    where result = unsafePerformIO x
+--newtype RestControllerContainer t m a = RestControllerContainer
+--                                          { runRest :: HttpReq t
+--                                                      -> HttpResp m
+--                                                      -> (a, HttpReq t, HttpResp m) }
 
 routeRestController :: RestController a => a -> HttpRoute DC s
 routeRestController controller = mconcat routes
@@ -72,13 +61,13 @@ routeRestController controller = mconcat routes
                   routeMethod "POST" $ routeVar $ routeFn (_restWithVar controller restUpdate)]
 
 respond404 :: RestControllerContainer t DC ()
-respond404 = RestControllerContainer $ \req _ -> ((), req, resp404 req)
+respond404 = StateT $ \(req, _) -> return $ ((), (req, resp404 req))
 
 redirectTo :: String -> RestControllerContainer t DC ()
-redirectTo path = RestControllerContainer $ \req _ -> ((), req, resp303 path)
+redirectTo path = StateT $ \(req, _) -> return $ ((), (req, resp303 path))
 
 render :: String -> L -> RestControllerContainer t DC ()
-render ctype text = RestControllerContainer $ \req resp -> ((), req, mkResp resp)
+render ctype text = StateT $ \(req, resp) -> return $ ((), (req, mkResp resp))
   where len = S.pack $ "Content-Length: " ++ show (L.length text)
         ctypeHeader = S.pack $ "Content-Type: " ++ ctype
         mkResp resp = resp { respHeaders = respHeaders resp ++ [ctypeHeader, len],
@@ -125,21 +114,21 @@ renderTemplate tmpl context = do
   render "text/html" str
 
 setSession :: String -> RestControllerContainer t DC ()
-setSession cookie = RestControllerContainer $ \req resp ->
+setSession cookie = StateT $ \(req, resp) ->
   let cookieHeader = S.pack $ "Set-Cookie: _sess=" ++ cookie ++ "; path=/;"
-  in ((), req, resp { respHeaders = cookieHeader:(respHeaders resp)})
+  in return $ ((), (req, resp { respHeaders = cookieHeader:(respHeaders resp)}))
 
 destroySession :: RestControllerContainer t DC ()
-destroySession = RestControllerContainer $ \req resp ->
+destroySession = StateT $ \(req, resp) ->
   let cookieHeader = S.pack $ "Set-Cookie: _sess=; path=/; expires=Thu, Jan 01 1970 00:00:00 UTC;"
-  in ((), req, resp { respHeaders = cookieHeader:(respHeaders resp)})
+  in return $ ((), (req, resp { respHeaders = cookieHeader:(respHeaders resp)}))
 
 usernameFromSession :: RestControllerContainer t DC (Maybe S)
-usernameFromSession = RestControllerContainer $ \req resp -> (_getUser req, req, resp)
+usernameFromSession = StateT $ \(req, resp) -> (_getUser req, (req, resp))
   where _getUser req = foldl (\accm (k, v) -> if k == "_sess" then Just v else accm) Nothing $ reqCookies req
 
 getHttpReq :: RestControllerContainer t DC (HttpReq t)
-getHttpReq = RestControllerContainer $ \req resp -> (req, req, resp)
+getHttpReq = StateT $ \(req, resp) -> return $ (req, (req, resp))
 
 type Params = [(S, (L, [(S,S)]))]
 
@@ -171,7 +160,7 @@ class RestController a where
                 -> Iter L DC (HttpResp DC)
   _restNoVar self handler req = do
     params <- paramList req
-    let (_, _, response) = runRest (handler self params) req $ mkHttpHead stat200
+    (_, _, response) <- runStateT (handler self params) (req, mkHttpHead stat200)
     return $ response
 
   _restWithVar :: a
@@ -181,7 +170,7 @@ class RestController a where
   _restWithVar self handler req = do
     params <- paramList req
     let arg = head $ reqPathParams req
-    let (_, _, response) = runRest (handler self arg params) req $ mkHttpHead stat200
+    let (_, _, response) = runStateT (handler self arg params) (req, mkHttpHead stat200)
     return $ response
 
 paramList :: HttpReq s -> Iter L DC Params

@@ -5,9 +5,7 @@ import System.IO.Unsafe
 import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.IterIO.Iter as I (run)
 import Data.Maybe
-import qualified Data.Text as T
 import Data.IterIO.Inum
 import Data.IterIO.Http
 import Text.Hastache

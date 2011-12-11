@@ -32,18 +32,18 @@ instance Val FSBlob where
   
   cast' _ = fail "Cannot convert type to FSBlob"
 
-getBlob :: MonadIO m => FSObjectId -> Action m FSBlob
-getBlob blbId = do
+getBlob :: MonadIO m => FSObjectId -> FSDBQuery m FSBlob
+getBlob blbId = FSDBQueryC $ do
   dbBlob <- fetch $ select ["_id" =: toObjectId blbId] "blobs"
   let (Just blob) = cast' (Doc dbBlob)
   return blob
 
-saveBlob :: (MonadIO m, Applicative m) => FSBlob -> Action m FSBlob
+saveBlob :: (MonadIO m, Applicative m) => FSBlob -> FSDBQuery m FSBlob
 saveBlob blob 
-  | isJust (blobId blob) = do
+  | isJust (blobId blob) = FSDBQueryC $ do
       save "blobs" $ doc
       return blob
-  | otherwise = do
+  | otherwise = FSDBQueryC $ do
       newId <- insert "blobs" $ exclude ["_id"] doc
       return blob { blobId = fmap fromObjectId $ cast' newId }
   where (Doc doc) = val blob
