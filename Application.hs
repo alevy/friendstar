@@ -17,7 +17,7 @@ currentUser = do
   uname <- usernameFromSession
   case uname of
     Just _username' -> do
-      fmap Just $ liftLIO $ run $ findProfileByUsername _username'
+      liftLIO $ runM $ findProfileByUsername _username'
     Nothing -> return Nothing
 
 renderTemplate :: Html -> RestControllerContainer t DC ()

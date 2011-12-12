@@ -28,9 +28,10 @@ import Text.Regex
 import qualified LIO.TCB as LIO
 import qualified LIO.DCLabel as DC
 
-import FSDB hiding (run)
-import qualified FSDB as FSDB (run)
+import FSDB hiding (run, runM)
+import qualified FSDB as FSDB (run, runM)
 
+runM = FSDB.runM
 run = FSDB.run
 
 data FSPost = FSPost {
