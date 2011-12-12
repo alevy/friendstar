@@ -10,12 +10,12 @@ import Functions
 import RestController
 import RoutedServer
 
-import WelcomeController
-import ProfilePicsController
-import SearchController
-import ProfilesController
-import PostsController
-import FriendsController
+import Controllers.WelcomeController
+import Controllers.ProfilePicsController
+import Controllers.SearchController
+import Controllers.ProfilesController
+import Controllers.PostsController
+import Controllers.FriendsController
 
 main :: IO ()
 main = do

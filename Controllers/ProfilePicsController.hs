@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module ProfilePicsController where
+module Controllers.ProfilePicsController where
 
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L

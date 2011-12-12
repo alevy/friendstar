@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module WelcomeController where
+module Controllers.WelcomeController where
 
 import Application
 import RestController

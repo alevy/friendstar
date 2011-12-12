@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module PostsController where
+module Controllers.PostsController where
 
 import Prelude
 

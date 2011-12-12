@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module ProfilesController where
+module Controllers.ProfilesController where
 
 import Prelude hiding (show)
 import qualified Data.ByteString.Char8 as S

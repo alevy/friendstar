@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module SearchController where
+module Controllers.SearchController where
 
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Maybe
