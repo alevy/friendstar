@@ -23,8 +23,8 @@ field _name req def = div ! class_ "field" $ do
         capitalize [] = []
         idName = toValue $ ("profile_" ++ _name)
 
-show :: FSProfile -> [FSPostWithAuthor] -> Html
-show profile posts = do
+show :: FSProfile -> [FSPostWithAuthor] -> Maybe String -> Html
+show profile posts mcurrentCity = do
   h2 $ toHtml $ fullName profile
   case profilePicId profile of
     Just profilePId ->
@@ -32,7 +32,7 @@ show profile posts = do
     Nothing -> ""
   div ! id "details" $ do
     "Current City: "
-    toHtml $ currentCity profile
+    toHtml $ mcurrentCity
   div ! id "posts" $ do
     h3 "Wall"
     form ! action "/posts/" ! method "POST" $ do
@@ -48,8 +48,8 @@ show profile posts = do
           div ! class_ "post_details" $ do
             "Posted by "; a ! href (toValue (username $ author postA)) $ (toHtml $ fullName $ author postA)) posts
 
-edit :: FSProfile -> Html
-edit profile = do
+edit :: FSProfile -> Maybe String -> Html
+edit profile mcurrentCity = do
   h2 "Edit My Profile"
   div ! id "profile_pic" $ do
     case profilePicId profile of
@@ -63,5 +63,5 @@ edit profile = do
     field "first_name" True $ firstName profile
     field "middle_name" False $ middleName profile
     field "last_name" True $ lastName profile
-    field "current_city" False $ currentCity profile
+    field "current_city" False $ mcurrentCity
     p $ input ! type_ "submit" ! value "Update Profile"

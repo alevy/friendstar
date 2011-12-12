@@ -13,8 +13,6 @@ search query profiles = do
   h2 $ do "Search results for "; em $ toHtml query
   if length profiles > 0 then
     ol ! class_ "results" $ mapM_ (\p ->
-      li $ do
-        a ! href (toValue $ "/profiles/" ++ (username p)) $ toHtml $ fullName p
-        em $ toHtml $ currentCity p) profiles
+      li $ do a ! href (toValue $ "/profiles/" ++ (username p)) $ toHtml $ fullName p) profiles
   else
     ""

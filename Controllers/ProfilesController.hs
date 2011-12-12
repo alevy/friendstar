@@ -3,8 +3,9 @@ module Controllers.ProfilesController where
 
 import Prelude hiding (show)
 import qualified Data.ByteString.Char8 as S
+import Data.Maybe
 import Data.Foldable
-import LIO.LIO (liftLIO)
+import LIO.LIO (liftLIO, unlabel)
 import LIO.DCLabel
 
 import Application
@@ -31,23 +32,27 @@ instance RestController ProfilesController where
 
   restShow _ user _ = do
     profile <- liftLIO $ run $ findProfileByUsername user
+    mcurrentCity <- liftLIO $ unlabel $ currentCity profile
     profilePosts <- liftLIO $ postsToPostsWithAuthor $ take 10 $ posts profile
-    renderTemplate $ show profile profilePosts
+    renderTemplate $ show profile profilePosts mcurrentCity
   
   restEdit _ user _ = do
     profile <- liftLIO $ run $ findProfileByUsername user
-    renderTemplate $ edit profile
+    mcurrentCity <- liftLIO $ unlabel $ currentCity profile
+    renderTemplate $ edit profile mcurrentCity
   
   restCreate _ params = do
-    let profile = profileFromMap $ paramMap params "profile"
-    _ <- return $ run $ saveProfile profile
+    user <- fmap (S.unpack . fromJust) usernameFromSession
+    let profile = profileFromMap user $ paramMap params "profile"
+    _ <- liftLIO $ run $ saveProfile profile
     redirectTo $ "/profiles/" ++ (username profile)
     setSession (username profile)
   
   restUpdate _ user params = do
+    mUser <- fmap fromJust usernameFromSession
     let p = paramMap params "profile"
-    currentProfile <- liftLIO $ run $ findProfileByUsername user
-    let profile = (profileFromMap p)
+    currentProfile <- liftLIO $ run $ findProfileByUsername mUser
+    let profile = (profileFromMap "" p)
                       { profileId = profileId currentProfile,
                         username = username currentProfile }
     profile' <- liftLIO $ run $ saveProfile profile

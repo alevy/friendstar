@@ -9,7 +9,6 @@ import Control.Applicative
 import Control.Monad.Trans
 import Control.Monad.IO.Control
 import Data.Bson
-import Data.Bool
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Data
@@ -17,16 +16,13 @@ import qualified Data.List as List
 import Data.Map hiding (map)
 import qualified Data.Text as T
 import Data.Time.Clock
-import Data.Typeable
 import Data.Maybe
 import Data.String.Utils
-import Data.UString (u)
 import Database.MongoDB
 import Text.PhoneticCode.Soundex
-import Text.Regex
 
 import qualified LIO.TCB as LIO
-import qualified LIO.DCLabel as DC
+import LIO.DCLabel
 
 import FSDB hiding (run, runM)
 import qualified FSDB as FSDB (run, runM)
@@ -38,7 +34,7 @@ data FSPost = FSPost {
   postAuthorId :: FSObjectId,
   postTimestamp :: UTCTime,
   postText :: T.Text
-} deriving (Show, Eq, Data, Typeable)
+} deriving (Show, Eq, Typeable)
 
 instance Ord FSPost where
   compare post1 post2 = compare (postTimestamp post2) (postTimestamp post1)
@@ -50,38 +46,44 @@ data FSProfile = FSProfile {
   firstName :: String,
   middleName :: Maybe String,
   lastName :: String,
-  currentCity :: Maybe String,
+  currentCity :: LIO.Labeled DCLabel (Maybe String),
   friends :: [FSObjectId],
   incomingFriendRequests :: [FSObjectId],
   posts :: [FSPost]
-} deriving (Show, Eq, Data, Typeable)
+} deriving (Typeable)
+
+instance Eq FSProfile where
+  p1 == p2 = (isJust $ profileId p1) && (profileId p1) == (profileId p2)
+
+instance Show FSProfile where
+  show p = "FSProfile [_id: \"" ++ (show $ profileId p) ++ "\", username: \"" ++ (username p) ++ "\"]"
 
 defaultFSProfile :: FSProfile
 defaultFSProfile = FSProfile {
   profileId = Nothing, profilePicId = Nothing, username = "", firstName = "", middleName = Nothing,
-  lastName = "", currentCity = Nothing, friends = [],
+  lastName = "", currentCity = (LIO.labelTCB LIO.ltop Nothing), friends = [],
   incomingFriendRequests = [], posts = []
 }
 
 fullName :: FSProfile -> String
 fullName p = firstName p ++ " " ++ lastName p
 
-profileFromMap :: Map String L.ByteString -> FSProfile
-profileFromMap map = defaultFSProfile {
-  username = L.unpack $ map Data.Map.! "username",
+profileFromMap :: String -> Map String L.ByteString -> FSProfile
+profileFromMap uname map = defaultFSProfile {
+  username = uname,
   firstName = L.unpack $ map Data.Map.! "first_name",
   middleName = fmap L.unpack $ "middle_name" `Data.Map.lookup` map,
   lastName = L.unpack $ map Data.Map.! "last_name",
-  currentCity = fmap L.unpack $ "current_city" `Data.Map.lookup` map
+  currentCity = lbl $ fmap L.unpack $ "current_city" `Data.Map.lookup` map
 }
+  where lbl = LIO.labelTCB (newDC uname uname)
 
 searchTerms :: FSProfile -> [String]
 searchTerms profile = map soundexNARA terms
   where terms = [firstName profile,
                  maybe "" id $ middleName profile,
                  lastName profile,
-                 username profile] ++
-                 (splitWs $ maybe "" id $ currentCity profile)
+                 username profile]
 
 instance Val FSProfile where
   val profile = Doc [ "_id" =: (fmap toObjectId $ profileId profile),
@@ -90,7 +92,7 @@ instance Val FSProfile where
                   "first_name" =: firstName profile,
                   "middle_name" =: middleName profile,
                   "last_name" =: lastName profile,
-                  "current_city" =: currentCity profile,
+                  "current_city" =: (LIO.unlabelTCB $ currentCity profile),
                   "search_terms" =: searchTerms profile,
                   "friends" =: (fmap toObjectId $ friends profile),
                   "incoming_friend_requests" =: (fmap toObjectId $ incomingFriendRequests profile),
@@ -99,15 +101,17 @@ instance Val FSProfile where
   cast' (Doc doc) = Just defaultFSProfile {
     profileId = fmap fromObjectId $ at "_id" doc,
     profilePicId = fmap fromObjectId $ Data.Bson.lookup "profile_pic_id" doc,
-    username = at "username" doc,
+    username = uname,
     firstName = at "first_name" doc,
     middleName = Data.Bson.lookup "middle_name" doc,
     lastName = at "last_name" doc,
-    currentCity = Data.Bson.lookup "current_city" doc,
+    currentCity = lbl $ Data.Bson.lookup "current_city" doc,
     friends = fmap fromObjectId $ atOrDefault "friends" doc [],
     incomingFriendRequests = fmap fromObjectId $ atOrDefault "incoming_friend_requests" doc [],
     posts = List.sort $ fmap toPost $ atOrDefault "posts" doc []}
     where toPost post = fromJust $ cast' post
+          uname = at "username" doc
+          lbl = LIO.labelTCB (newDC uname uname)
 
 
 atOrDefault :: Val v => Label -> Document -> v -> v
@@ -184,7 +188,7 @@ postToProfile post profileId = FSDBQueryC $ do
 
 data FSPostWithAuthor = FSPostWithAuthor {
   post :: FSPost, author :: FSProfile
-  } deriving (Show, Data, Typeable)
+  } deriving (Show, Typeable)
 
 postWithAuthor :: (MonadIO m, Applicative m) => FSPost -> FSDBQuery m FSPostWithAuthor
 postWithAuthor post = FSDBQueryC $ do
