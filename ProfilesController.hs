@@ -1,14 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ProfilesController where
 
-import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
-import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.IterIO.Iter as I (run)
-import Data.IterIO.Inum
-import Data.IterIO.Http
-import Data.Time.Clock
-import Text.Hastache
+import Data.Foldable
+import LIO.LIO (liftLIO)
+import LIO.DCLabel
 
 import Application
 import Profile
@@ -17,36 +13,45 @@ import RoutedServer
 
 data ProfilesController = ProfilesController
 
+defaultContext = do
+  _username <- usernameFromSession
+  liftLIO $ contextFromMUsername _username
+
+postsToPostsWithAuthor :: [FSPost] -> DC [FSPostWithAuthor]
+postsToPostsWithAuthor = foldrM go []
+  where go p accm = do
+          result <- liftLIO $ run . postWithAuthor $ p
+          return $ result:accm
+
 instance RestController ProfilesController where
-  restIndex self _ = do
+  restIndex _ _ = do
     mUser <- usernameFromSession
     case mUser of
       Just user -> redirectTo ("/profiles/" ++ (S.unpack user))
-      otherwise -> redirectTo ("/")
+      Nothing -> redirectTo ("/")
 
-  restShow self user _ = do
-    context <- contextFromMUsername `fmap` usernameFromSession
-    let profile = run $ findProfileByUsername user
-    let profilePosts = map (run . postWithAuthor) $ take 10 $ posts profile
+  restShow _ user _ = do
+    context <- defaultContext
+    profile <- liftLIO $ run $ findProfileByUsername user
+    profilePosts <- liftLIO $ postsToPostsWithAuthor $ take 10 $ posts profile
     renderTemplate "views/profiles/show.html" $ addGenericList "posts" profilePosts $ addGeneric "profile" profile $ context
   
-  restEdit self user _ = do
-    context <- contextFromMUsername `fmap` usernameFromSession
-    let profile = run $ findProfileByUsername user
+  restEdit _ user _ = do
+    context <- defaultContext
+    profile <- liftLIO $ run $ findProfileByUsername user
     renderTemplate "views/profiles/edit.html" $ addGeneric "profile" profile $ context
   
-  restCreate self params = do
+  restCreate _ params = do
     let profile = profileFromMap $ paramMap params "profile"
-    return $ run $ saveProfile profile
+    _ <- return $ run $ saveProfile profile
     redirectTo $ "/profiles/" ++ (username profile)
     setSession (username profile)
   
-  restUpdate self user params = do
-    req <- getHttpReq
+  restUpdate _ user params = do
     let p = paramMap params "profile"
-    let currentProfile = run $ findProfileByUsername user
+    currentProfile <- liftLIO $ run $ findProfileByUsername user
     let profile = (profileFromMap p)
                       { profileId = profileId currentProfile,
                         username = username currentProfile }
-    let profile' = run $ saveProfile profile
+    profile' <- liftLIO $ run $ saveProfile profile
     redirectTo ("/profiles/" ++ (username profile'))

@@ -3,17 +3,16 @@ module PostsController where
 
 import Prelude
 
-import Control.Monad.Trans
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Map ((!))
 import Data.Maybe
 import qualified Data.Text as T
-import Data.Time.Clock
 import Text.Hastache
 
 import RestController
 import RoutedServer
+import Functions
 import Profile
 
 import LIO.LIO (liftLIO)
@@ -22,19 +21,19 @@ data PostController = PostController
 
 instance RestController PostController where
 
-  restNew self _ = do
+  restNew _ _ = do
     renderTemplate "views/posts/new.html" $ (\_ -> MuNothing)
 
-  restCreate self params = do
+  restCreate _ params = do
     mUser <- usernameFromSession
-    user <- run $ findProfileByUsername $ fromJust mUser
-    let mProfileUsername = S.pack $ L.unpack $ fst $ fromJust $ lookup "profile[username]" params
-    let profile = run $ findProfileByUsername mProfileUsername
+    user <- liftLIO $ run $ findProfileByUsername $ fromJust mUser
     let postMap = paramMap params "post"
-    now <- liftIO $ getCurrentTime
-    let post = FSPost { postAuthorId = fromJust $ profileId user,
+    let toUsername = postMap ! "username"
+    toUser <- liftLIO $ run $ findProfileByUsername $ S.pack $ L.unpack $ toUsername
+    now <- liftLIO $ getCurrentTime
+    let newPost = FSPost { postAuthorId = fromJust $ profileId user,
                         postTimestamp = now,
                         postText = T.pack $ L.unpack $ postMap ! "text" }
-    return $ run $ postToProfile post $ fromJust $ profileId user
-    redirectTo $ "/profiles/" ++ (username user)
+    liftLIO $ run $ postToProfile newPost $ fromJust $ profileId toUser
+    redirectTo $ "/profiles/" ++ (L.unpack toUsername)
 

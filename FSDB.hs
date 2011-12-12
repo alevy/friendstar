@@ -18,8 +18,12 @@ server = runIOE $ connect $ host "127.0.0.1"
 run :: FSDBQuery IO a -> DC a
 run (FSDBQueryC act) = ioTCB $ do
   pipe <- server
-  (Right result) <- access pipe master "friendstar" act
-  return result
+  acc <- access pipe master "friendstar" act
+  case acc of
+    (Right result) -> return result
+    (Left f) -> do
+      putStrLn $ show f
+      return undefined
 
 type FSObjectId = S.ByteString
 

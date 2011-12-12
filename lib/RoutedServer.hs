@@ -6,6 +6,8 @@ module RoutedServer (
   paramMap
 ) where
 
+import Conversions
+
 import Control.Concurrent
 import Control.Monad
 import Data.ByteString.Base64
@@ -19,7 +21,6 @@ import System.Posix
 import Text.Regex
 
 import Data.IterIO
-import Data.IterIO.Iter
 import Data.IterIO.Http
 import Data.IterIO.HttpRoute
 
@@ -61,19 +62,6 @@ runHttpServer port lrh = do
     _ <- forkIO $ simpleServer iter enum lrh
     return ()
 
-iterIOtoIterDC :: ChunkData a => Iter a IO b -> Iter a DC b
-iterIOtoIterDC iterIn = Iter $ \c -> go $ (runIter iterIn) c
-  where go (Done a (Chunk b c)) = Done a (Chunk b c)
-        go (IterM m) = do
-          let m1 = fmap go $ LIO.ioTCB m
-          IterM m1
-        go (IterF next) = IterF $ iterIOtoIterDC next
-        go (Fail itf ma mb) = Fail itf ma mb
-        go x = seq (unsafePerformIO $ putStrLn $ "BLARG!!!" ++ (show x)) undefined -- TODO: complete implementation
-
-onumIOtoOnumDC :: Onum L IO L -> Onum L DC a
-onumIOtoOnumDC inO = mkInum $ iterIOtoIterDC (inO .|$ dataI)
-
 simpleServer :: Iter L IO ()
               -> Onum L IO L
               -> HttpRequestHandler DC ()
@@ -88,6 +76,11 @@ userFromAuthCode :: Maybe S.ByteString -> Maybe String
 userFromAuthCode mAuthCode = fmap extractUser mAuthCode
   where extractUser b64u = S.unpack $ S.takeWhile (/= ':') $ decodeLenient b64u
 
+replace :: (a -> Bool) -> a -> [a] -> [a]
+replace f a (x:xs) | f x = a:(replace f a xs)
+                 | otherwise = x:(replace f a xs)
+replace _ _ [] = []
+
 secureInumHttpServer :: HttpRequestHandler DC () -> Inum L L DC ()
 secureInumHttpServer lrh = mkInumM $
   do
@@ -96,10 +89,11 @@ secureInumHttpServer lrh = mkInumM $
       Just user -> do
         let l = newDC user user
         LIO.liftLIO $ LIO.lowerClr l
-        -- let x = do
-        --           LIO.lowerClr l
-        --           run $ lrh req
-        resp <- liftI $ inumHttpBody req .| lrh req
+        let resultReq = req {
+          reqHeaders = replace ((== "authorization") . fst) ("authorization", S.pack user) $
+                        reqHeaders req
+        }
+        resp <- liftI $ inumHttpBody req .| lrh resultReq
         irun $ enumHttpResp resp Nothing
       Nothing -> do
         let authRequired = mkHttpHead stat401

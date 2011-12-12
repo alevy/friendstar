@@ -24,16 +24,15 @@ module RestController ( RestController,
                         respond404) where
 
 import Control.Monad
-import Control.Monad.Trans
 import Control.Monad.Trans.State
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Data
 import Data.Monoid
 import Data.IterIO
-import Data.IterIO.Iter
 import Data.IterIO.Http
 import Data.IterIO.HttpRoute
+import qualified LIO.LIO as LIO
 import LIO.DCLabel
 import Text.Hastache
 import Text.Hastache.Context
@@ -88,29 +87,29 @@ emptyContext _ = MuBool False
 --  Will render to:
 --    Frank has 4 posts.
 addVar :: (MuVar a) => S -> a -> MuContext IO -> MuContext IO
-addVar name var context = check
-  where check str | str == name = MuVariable var
-                  | (S.unpack str) == ((S.unpack name) ++ "?") = MuBool True
+addVar _name var context = check
+  where check str | str == _name = MuVariable var
+                  | (S.unpack str) == ((S.unpack _name) ++ "?") = MuBool True
                   | True = context str
 
 -- | Adds the key-value pair (name, var) to context, where var is
 -- an instance of 'Data.Data'.
 addGeneric :: (Data a) => S -> a -> MuContext IO -> MuContext IO
-addGeneric name var context = check
-  where check x | x == name = MuBool True
-                | (prefix x) == name = varCtx (postfix x)
+addGeneric _name var context = check
+  where check x | x == _name = MuBool True
+                | (prefix x) == _name = varCtx (postfix x)
                 | otherwise = context x
         prefix x = S.pack $ takeWhile (/= '.') $ S.unpack x
         postfix x = S.pack $ tail $ dropWhile (/= '.') $ S.unpack x
         varCtx = mkGenericContext var
 
 addGenericList :: (Data a) => S -> [a] -> MuContext IO -> MuContext IO
-addGenericList name list context = (\x -> if x == name then MuList flist else context x)
+addGenericList _name list context = (\x -> if x == _name then MuList flist else context x)
   where flist = fmap mkGenericContext list
 
 renderTemplate :: FilePath -> MuContext IO -> RestControllerContainer t DC ()
 renderTemplate tmpl context = do
-  str <- liftIO $ hastacheFile (defaultConfig { muTemplateFileDir = Just "views" }) tmpl context
+  let str = unsafePerformIO $ hastacheFile (defaultConfig { muTemplateFileDir = Just "views" }) tmpl context
   render "text/html" str
 
 setSession :: String -> RestControllerContainer t DC ()
@@ -124,8 +123,9 @@ destroySession = StateT $ \(req, resp) ->
   in return $ ((), (req, resp { respHeaders = cookieHeader:(respHeaders resp)}))
 
 usernameFromSession :: RestControllerContainer t DC (Maybe S)
-usernameFromSession = StateT $ \(req, resp) -> (_getUser req, (req, resp))
-  where _getUser req = foldl (\accm (k, v) -> if k == "_sess" then Just v else accm) Nothing $ reqCookies req
+usernameFromSession = do
+  httpReq <- getHttpReq
+  return $ lookup "authorization" (reqHeaders httpReq)
 
 getHttpReq :: RestControllerContainer t DC (HttpReq t)
 getHttpReq = StateT $ \(req, resp) -> return $ (req, (req, resp))
@@ -160,7 +160,7 @@ class RestController a where
                 -> Iter L DC (HttpResp DC)
   _restNoVar self handler req = do
     params <- paramList req
-    (_, _, response) <- runStateT (handler self params) (req, mkHttpHead stat200)
+    (_, (_, response)) <- LIO.liftLIO $ runStateT (handler self params) (req, mkHttpHead stat200)
     return $ response
 
   _restWithVar :: a
@@ -170,7 +170,7 @@ class RestController a where
   _restWithVar self handler req = do
     params <- paramList req
     let arg = head $ reqPathParams req
-    let (_, _, response) = runStateT (handler self arg params) (req, mkHttpHead stat200)
+    (_, (_, response)) <- LIO.liftLIO $ runStateT (handler self arg params) (req, mkHttpHead stat200)
     return $ response
 
 paramList :: HttpReq s -> Iter L DC Params

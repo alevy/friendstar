@@ -3,6 +3,7 @@ module ProfilePicsController where
 
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
+import LIO.LIO (liftLIO)
 
 import Application
 import RestController
@@ -19,23 +20,26 @@ imageFromParams params = (imageData, contentType)
 instance RestController ProfilePicsController where
 
   restShow _ imageId _ = do
-    let image = run $ getBlob imageId
+    image <- liftLIO $ run $ getBlob imageId
     render (blobMimeType image) (L.pack $ S.unpack $ blobData image)
 
   restNew _ _ = do
-    context <- contextFromMUsername `fmap` usernameFromSession
+    _username <- usernameFromSession
+    context <- liftLIO $ contextFromMUsername _username
     renderTemplate "views/profile_pics/new.html" $ context
 
   restCreate _ params = do
     (Just user) <- usernameFromSession
     let (imageData, contentType) = imageFromParams params
-    let image = run $ saveBlob $ FSBlob {
+    image <- liftLIO $ run $ saveBlob $ FSBlob {
       blobId = Nothing,
       blobData = S.pack $ L.unpack $ imageData,
       blobMimeType = S.unpack $ contentType
     }
-    let currentProfile = (run $ findProfileByUsername user) {
-      profilePicId = blobId image
-    }
-    return $ run $ saveProfile currentProfile
+    currentProfile <- do
+      c <- liftLIO $ run $ findProfileByUsername user
+      return $ c {
+        profilePicId = blobId image
+      }
+    _ <- return $ run $ saveProfile currentProfile
     redirectTo ("/profiles/edit/" ++ (S.unpack user))

@@ -4,12 +4,14 @@ module Application where
 import qualified Data.ByteString.Char8 as S
 
 import Text.Hastache
+import LIO.DCLabel
 
 import RestController
 import Profile
 
-contextFromMUsername :: Maybe S.ByteString -> MuContext IO
-contextFromMUsername username = case username of
-                    Just _username -> addGeneric "current_user"
-                      (run $ findProfileByUsername _username) $ emptyContext
-                    Nothing -> emptyContext
+contextFromMUsername :: Maybe S.ByteString -> DC (MuContext IO)
+contextFromMUsername _username = case _username of
+                    Just _username' -> do
+                      curUser <- (run $ findProfileByUsername _username')
+                      return $ addGeneric "current_user" curUser emptyContext
+                    Nothing -> return emptyContext

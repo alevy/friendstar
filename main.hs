@@ -1,11 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Data.IterIO.Http
-import Data.IterIO.HttpRoute
+import Data.IterIO.HttpRoute hiding (routeFileSys)
 import Data.Monoid
 
 import LIO.DCLabel
 
+import Functions
 import RestController
 import RoutedServer
 
@@ -21,6 +22,8 @@ main :: IO ()
 main = do
   runHttpServer 8000 $ runHttpRoute $ mconcat routing
 
+routeFileSys = routeGenFileSys defaultFileSystemCalls
+
 routing :: [HttpRoute DC s]
 routing = [ routeTop $ routeConst $ resp301 "/welcome",
                     routeName "welcome" $ routeRestController (WelcomeController),
@@ -29,8 +32,8 @@ routing = [ routeTop $ routeConst $ resp301 "/welcome",
                     routeName "posts" $ routeRestController (PostController),
                     routeName "profiles" $ routeRestController (ProfilesController),
                     routeName "profile_pics" $ routeRestController (ProfilePicsController),
-                    routeName "friends" $ routeRestController (FriendsController)
---                    routeFileSys mimeMap (dirRedir "/index.html") "public"
+                    routeName "friends" $ routeRestController (FriendsController),
+                    routeFileSys mimeMap (const mempty) "public"
                   ]
 
 

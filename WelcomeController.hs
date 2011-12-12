@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module WelcomeController where
 
+import LIO.LIO (liftLIO)
+
 import Application
 import RestController
 import RoutedServer
@@ -11,5 +13,6 @@ data WelcomeController = WelcomeController
 instance RestController WelcomeController where
 
   restIndex self _ = do
-    context <- contextFromMUsername `fmap` usernameFromSession
+    _username <- usernameFromSession
+    context <- liftLIO $ contextFromMUsername _username
     renderTemplate "views/welcome/index.html" $ context
