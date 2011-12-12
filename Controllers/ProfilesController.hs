@@ -5,7 +5,7 @@ import Prelude hiding (show)
 import qualified Data.ByteString.Char8 as S
 import Data.Maybe
 import Data.Foldable
-import LIO.LIO (liftLIO, unlabel)
+import LIO.LIO
 import LIO.DCLabel
 
 import Application
@@ -32,7 +32,12 @@ instance RestController ProfilesController where
 
   restShow _ user _ = do
     profile <- liftLIO $ run $ findProfileByUsername user
-    mcurrentCity <- liftLIO $ unlabel $ currentCity profile
+    mcurrentCity <- liftLIO $ do
+      clearance <- getClearance
+      if labelOf (currentCity profile) `leq` clearance then
+        unlabel $ currentCity profile
+      else
+        return Nothing
     profilePosts <- liftLIO $ postsToPostsWithAuthor $ take 10 $ posts profile
     renderTemplate $ show profile profilePosts mcurrentCity
   
