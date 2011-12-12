@@ -7,6 +7,8 @@ import qualified Data.ByteString.Char8 as S
 import Text.Blaze.Html5 hiding (map)
 import Text.Blaze.Html5.Attributes hiding (form, label)
 
+import Profile
+
 field :: String -> Bool -> Html
 field _name req = div ! class_ "field" $ do
   label ! for idName $
@@ -20,15 +22,15 @@ field _name req = div ! class_ "field" $ do
         capitalize [] = []
         idName = toValue $ ("profile_" ++ _name)
 
-index :: Maybe S.ByteString -> Html
+index :: Maybe FSProfile -> Html
 index mcurrentUser = do
   case mcurrentUser of
     Just currentUser -> p $ do
               "Welcome Back! Go to your profile "
-              a ! href (toValue $ "/profiles/" ++ (S.unpack $ currentUser)) $ "here"
+              a ! href (toValue $ "/profiles/" ++ (username currentUser)) $ "here"
     Nothing -> do
+      h2 "Register below to start using FriendStar!"
       form ! action "/profiles" ! method "POST" ! id "new_profile_form" $ do
-        field "username" True
         field "first_name" True
         field "middle_name" False
         field "last_name" True

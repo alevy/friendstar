@@ -15,6 +15,14 @@ newtype FSDBQuery m a = FSDBQueryC (Action m a)
 server :: IO Pipe
 server = runIOE $ connect $ host "127.0.0.1"
 
+runM :: FSDBQuery IO a -> DC (Maybe a)
+runM (FSDBQueryC act) = ioTCB $ do
+  pipe <- server
+  acc <- access pipe master "friendstar" act
+  case acc of
+    (Right result) -> return $ Just result
+    (Left f) -> return Nothing
+
 run :: FSDBQuery IO a -> DC a
 run (FSDBQueryC act) = ioTCB $ do
   pipe <- server

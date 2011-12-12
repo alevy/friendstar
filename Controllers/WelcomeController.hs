@@ -11,5 +11,5 @@ data WelcomeController = WelcomeController
 instance RestController WelcomeController where
 
   restIndex _ _ = do
-    _username <- usernameFromSession
-    renderTemplate $ index _username
+    cu <- currentUser
+    renderTemplate $ index cu
