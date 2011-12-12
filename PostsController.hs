@@ -21,9 +21,6 @@ data PostController = PostController
 
 instance RestController PostController where
 
-  restNew _ _ = do
-    renderTemplate "views/posts/new.html" $ (\_ -> MuNothing)
-
   restCreate _ params = do
     mUser <- usernameFromSession
     user <- liftLIO $ run $ findProfileByUsername $ fromJust mUser

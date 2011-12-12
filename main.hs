@@ -13,7 +13,6 @@ import RoutedServer
 import WelcomeController
 import ProfilePicsController
 import SearchController
-import SessionsController
 import ProfilesController
 import PostsController
 import FriendsController
@@ -28,7 +27,6 @@ routing :: [HttpRoute DC s]
 routing = [ routeTop $ routeConst $ resp301 "/welcome",
                     routeName "welcome" $ routeRestController (WelcomeController),
                     routeName "search" $ routeRestController (SearchController),
-                    routeName "sessions" $ routeRestController (SessionsController),
                     routeName "posts" $ routeRestController (PostController),
                     routeName "profiles" $ routeRestController (ProfilesController),
                     routeName "profile_pics" $ routeRestController (ProfilePicsController),

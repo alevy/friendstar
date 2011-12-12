@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module RestController ( RestController,
+                        RestControllerContainer,
                         restIndex,
                         restShow,
                         restEdit,
@@ -14,11 +15,6 @@ module RestController ( RestController,
                         destroySession,
                         usernameFromSession,
                         render,
-                        addVar,
-                        addGeneric,
-                        addGenericList,
-                        emptyContext,
-                        renderTemplate,
                         redirectTo,
                         getHttpReq,
                         respond404) where
@@ -27,17 +23,12 @@ import Control.Monad
 import Control.Monad.Trans.State
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
-import Data.Data
 import Data.Monoid
 import Data.IterIO
 import Data.IterIO.Http
 import Data.IterIO.HttpRoute
 import qualified LIO.LIO as LIO
 import LIO.DCLabel
-import Text.Hastache
-import Text.Hastache.Context
-
-import System.IO.Unsafe
 
 type L = L.ByteString
 type S = S.ByteString
@@ -71,46 +62,6 @@ render ctype text = StateT $ \(req, resp) -> return $ ((), (req, mkResp resp))
         ctypeHeader = S.pack $ "Content-Type: " ++ ctype
         mkResp resp = resp { respHeaders = respHeaders resp ++ [ctypeHeader, len],
                         respBody = inumPure text }
-
--- | Returns an empty context for Hastache templates. Pass this to renderTemplate if
--- the template does not depend on any variables, or as an initial building block for
--- 'addVar' and 'addGeneric'
-emptyContext :: MuContext IO
-emptyContext _ = MuBool False
-
--- | Adds the key-value pair (name, var) to context.
--- For example,
---  In controller:
---    renderTemplae "mytemplate.html" $ addVar "num_posts" 4 $ addVar "name" "Frank" $ emptyContext
---  Then in the view:
---    {{ name }} has {{ num_posts }} posts.
---  Will render to:
---    Frank has 4 posts.
-addVar :: (MuVar a) => S -> a -> MuContext IO -> MuContext IO
-addVar _name var context = check
-  where check str | str == _name = MuVariable var
-                  | (S.unpack str) == ((S.unpack _name) ++ "?") = MuBool True
-                  | True = context str
-
--- | Adds the key-value pair (name, var) to context, where var is
--- an instance of 'Data.Data'.
-addGeneric :: (Data a) => S -> a -> MuContext IO -> MuContext IO
-addGeneric _name var context = check
-  where check x | x == _name = MuBool True
-                | (prefix x) == _name = varCtx (postfix x)
-                | otherwise = context x
-        prefix x = S.pack $ takeWhile (/= '.') $ S.unpack x
-        postfix x = S.pack $ tail $ dropWhile (/= '.') $ S.unpack x
-        varCtx = mkGenericContext var
-
-addGenericList :: (Data a) => S -> [a] -> MuContext IO -> MuContext IO
-addGenericList _name list context = (\x -> if x == _name then MuList flist else context x)
-  where flist = fmap mkGenericContext list
-
-renderTemplate :: FilePath -> MuContext IO -> RestControllerContainer t DC ()
-renderTemplate tmpl context = do
-  let str = unsafePerformIO $ hastacheFile (defaultConfig { muTemplateFileDir = Just "views" }) tmpl context
-  render "text/html" str
 
 setSession :: String -> RestControllerContainer t DC ()
 setSession cookie = StateT $ \(req, resp) ->

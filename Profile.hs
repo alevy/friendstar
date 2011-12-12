@@ -62,6 +62,9 @@ defaultFSProfile = FSProfile {
   incomingFriendRequests = [], posts = []
 }
 
+fullName :: FSProfile -> String
+fullName p = firstName p ++ " " ++ lastName p
+
 profileFromMap :: Map String L.ByteString -> FSProfile
 profileFromMap map = defaultFSProfile {
   username = L.unpack $ map Data.Map.! "username",

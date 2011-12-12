@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ProfilesController where
 
+import Prelude hiding (show)
 import qualified Data.ByteString.Char8 as S
 import Data.Foldable
 import LIO.LIO (liftLIO)
@@ -11,11 +12,9 @@ import Profile
 import RestController
 import RoutedServer
 
-data ProfilesController = ProfilesController
+import Views.Profiles
 
-defaultContext = do
-  _username <- usernameFromSession
-  liftLIO $ contextFromMUsername _username
+data ProfilesController = ProfilesController
 
 postsToPostsWithAuthor :: [FSPost] -> DC [FSPostWithAuthor]
 postsToPostsWithAuthor = foldrM go []
@@ -31,15 +30,13 @@ instance RestController ProfilesController where
       Nothing -> redirectTo ("/")
 
   restShow _ user _ = do
-    context <- defaultContext
     profile <- liftLIO $ run $ findProfileByUsername user
     profilePosts <- liftLIO $ postsToPostsWithAuthor $ take 10 $ posts profile
-    renderTemplate "views/profiles/show.html" $ addGenericList "posts" profilePosts $ addGeneric "profile" profile $ context
+    renderTemplate $ show profile profilePosts
   
   restEdit _ user _ = do
-    context <- defaultContext
     profile <- liftLIO $ run $ findProfileByUsername user
-    renderTemplate "views/profiles/edit.html" $ addGeneric "profile" profile $ context
+    renderTemplate $ edit profile
   
   restCreate _ params = do
     let profile = profileFromMap $ paramMap params "profile"

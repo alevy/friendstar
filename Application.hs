@@ -3,15 +3,32 @@ module Application where
 
 import qualified Data.ByteString.Char8 as S
 
-import Text.Hastache
+import Text.Blaze
+import Text.Blaze.Renderer.Utf8
 import LIO.DCLabel
+import LIO.LIO (liftLIO)
 
+import qualified Views.Layout as Layout
 import RestController
 import Profile
 
-contextFromMUsername :: Maybe S.ByteString -> DC (MuContext IO)
-contextFromMUsername _username = case _username of
-                    Just _username' -> do
-                      curUser <- (run $ findProfileByUsername _username')
-                      return $ addGeneric "current_user" curUser emptyContext
-                    Nothing -> return emptyContext
+currentUser :: RestControllerContainer t DC (Maybe FSProfile)
+currentUser = do
+  uname <- usernameFromSession
+  case uname of
+    Just _username' -> do
+      fmap Just $ liftLIO $ run $ findProfileByUsername _username'
+    Nothing -> return Nothing
+
+renderTemplate :: Html -> RestControllerContainer t DC ()
+renderTemplate tmpl = do
+  cu <- currentUser
+  render "text/html" $ renderHtml $ Layout.application cu tmpl
+
+instance ToHtml a => ToHtml (Maybe a) where
+  toHtml (Just a) = toHtml a
+  toHtml Nothing = toHtml ("" :: String)
+
+instance ToValue a => ToValue (Maybe a) where
+  toValue (Just a) = toValue a
+  toValue Nothing = toValue ("" :: String)

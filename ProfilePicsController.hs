@@ -10,6 +10,8 @@ import RestController
 import Blob
 import Profile
 
+import Views.ProfilePics
+
 data ProfilePicsController = ProfilePicsController
 
 imageFromParams :: Params -> (L.ByteString, S.ByteString)
@@ -24,9 +26,7 @@ instance RestController ProfilePicsController where
     render (blobMimeType image) (L.pack $ S.unpack $ blobData image)
 
   restNew _ _ = do
-    _username <- usernameFromSession
-    context <- liftLIO $ contextFromMUsername _username
-    renderTemplate "views/profile_pics/new.html" $ context
+    renderTemplate new
 
   restCreate _ params = do
     (Just user) <- usernameFromSession
