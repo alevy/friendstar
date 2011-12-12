@@ -8,7 +8,6 @@ import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Map ((!))
 import Data.Maybe
 import qualified Data.Text as T
-import Text.Hastache
 
 import RestController
 import RoutedServer
@@ -31,6 +30,6 @@ instance RestController PostController where
     let newPost = FSPost { postAuthorId = fromJust $ profileId user,
                         postTimestamp = now,
                         postText = T.pack $ L.unpack $ postMap ! "text" }
-    liftLIO $ run $ postToProfile newPost $ fromJust $ profileId toUser
+    _ <- liftLIO $ run $ postToProfile newPost $ fromJust $ profileId toUser
     redirectTo $ "/profiles/" ++ (L.unpack toUsername)
 
