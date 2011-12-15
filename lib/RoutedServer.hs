@@ -27,6 +27,7 @@ import Data.IterIO.HttpRoute
 import qualified LIO.TCB as LIO
 import qualified LIO.LIO as LIO
 import LIO.DCLabel
+import DCLabel.TCB
 
 import System.IO.Unsafe
 
@@ -53,7 +54,7 @@ httpAccept sock = do
       return (handleI h, enumHandle h)
 
 runHttpServer :: Net.PortNumber
-              -> HttpRequestHandler DC ()
+              -> (DCPrivTCB -> HttpRequestHandler DC ())
               -> IO ()
 runHttpServer port lrh = do
   sock <- myListen port
@@ -64,7 +65,7 @@ runHttpServer port lrh = do
 
 simpleServer :: Iter L IO ()
               -> Onum L IO L
-              -> HttpRequestHandler DC ()
+              -> (DCPrivTCB -> HttpRequestHandler DC ())
               -> IO ()
 simpleServer iter enum lrh = do
   let dcEnum = onumIOtoOnumDC enum
@@ -81,20 +82,26 @@ replace f a (x:xs) | f x = a:(replace f a xs)
                  | otherwise = x:(replace f a xs)
 replace _ _ [] = []
 
-secureInumHttpServer :: HttpRequestHandler DC () -> Inum L L DC ()
+secureInumHttpServer :: (DCPrivTCB -> HttpRequestHandler DC ()) -> Inum L L DC ()
 secureInumHttpServer lrh = mkInumM $
   do
     req <- httpReqI
     case userFromAuthCode (fmap (S.drop 6) $ Prelude.lookup "authorization" (reqHeaders req)) of
       Just user -> do
-        let l = newDC user user
+        let l = newDC user (<>)
         LIO.liftLIO $ LIO.lowerClr l
+        let pathPrefix = takeWhile (/= '/') $ dropWhile (== '/') $ S.unpack $ reqPath req
+        let privilege = createPrivTCB $ newPriv pathPrefix
         let resultReq = req {
           reqHeaders = replace ((== "authorization") . fst) ("authorization", S.pack user) $
                         reqHeaders req
         }
-        resp <- liftI $ inumHttpBody req .| lrh resultReq
-        irun $ enumHttpResp resp Nothing
+        resp <- liftI $ inumHttpBody req .| lrh privilege resultReq
+        resultLabel <- LIO.liftLIO $ LIO.getLabel
+        if resultLabel `LIO.leq` l then
+          irun $ enumHttpResp resp Nothing
+        else
+          irun $ enumHttpResp (mkHttpHead stat500) Nothing
       Nothing -> do
         let authRequired = mkHttpHead stat401
         irun $ enumHttpResp (authRequired

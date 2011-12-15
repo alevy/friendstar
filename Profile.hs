@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Profile where
 
 import Prelude hiding (lookup)
-
+import qualified Prelude (lookup)
 import Control.Applicative
 import Control.Monad.Trans
 import Control.Monad.IO.Control
@@ -13,16 +14,17 @@ import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Data
 import qualified Data.List as List
-import Data.Map hiding (map)
+import Data.Map hiding (map, singleton)
 import qualified Data.Text as T
 import Data.Time.Clock
 import Data.Maybe
+import qualified Data.UString as U
 import Data.String.Utils
 import Database.MongoDB
 import Text.PhoneticCode.Soundex
 
 import qualified LIO.TCB as LIO
-import LIO.DCLabel
+import LIO.DCLabel hiding (label)
 
 import FSDB hiding (run, runM)
 import qualified FSDB as FSDB (run, runM)
@@ -49,7 +51,8 @@ data FSProfile = FSProfile {
   currentCity :: LIO.Labeled DCLabel (Maybe String),
   friends :: [FSObjectId],
   incomingFriendRequests :: [FSObjectId],
-  posts :: [FSPost]
+  posts :: [FSPost],
+  permissions :: [String]
 } deriving (Typeable)
 
 instance Eq FSProfile where
@@ -62,7 +65,7 @@ defaultFSProfile :: FSProfile
 defaultFSProfile = FSProfile {
   profileId = Nothing, profilePicId = Nothing, username = "", firstName = "", middleName = Nothing,
   lastName = "", currentCity = (LIO.labelTCB LIO.ltop Nothing), friends = [],
-  incomingFriendRequests = [], posts = []
+  incomingFriendRequests = [], posts = [], permissions = []
 }
 
 fullName :: FSProfile -> String
@@ -96,7 +99,8 @@ instance Val FSProfile where
                   "search_terms" =: searchTerms profile,
                   "friends" =: (fmap toObjectId $ friends profile),
                   "incoming_friend_requests" =: (fmap toObjectId $ incomingFriendRequests profile),
-                  "posts" =: posts profile]
+                  "posts" =: posts profile,
+                  "permissions" =: permissions profile]
 
   cast' (Doc doc) = Just defaultFSProfile {
     profileId = fmap fromObjectId $ at "_id" doc,
@@ -108,10 +112,15 @@ instance Val FSProfile where
     currentCity = lbl $ Data.Bson.lookup "current_city" doc,
     friends = fmap fromObjectId $ atOrDefault "friends" doc [],
     incomingFriendRequests = fmap fromObjectId $ atOrDefault "incoming_friend_requests" doc [],
-    posts = List.sort $ fmap toPost $ atOrDefault "posts" doc []}
+    posts = List.sort $ fmap toPost $ atOrDefault "posts" doc [],
+    permissions = perms}
     where toPost post = fromJust $ cast' post
+          toPermission permission = fromJust $ cast' permission
           uname = at "username" doc
-          lbl = LIO.labelTCB (newDC uname uname)
+          lbl = LIO.labelTCB (newDC trustees uname)
+          trustees = foldl (.\/.) (singleton uname) perms
+          perms = atOrDefault "permissions" doc []
+          orEmpty = maybe [] (fromJust)
 
 
 atOrDefault :: Val v => Label -> Document -> v -> v
