@@ -22,7 +22,7 @@ import Database.MongoDB
 import Text.PhoneticCode.Soundex
 
 import qualified LIO.TCB as LIO
-import LIO.DCLabel hiding (Label)
+import LIO.DCLabel
 
 import FSDB hiding (run, runM)
 import qualified FSDB as FSDB (run, runM)
